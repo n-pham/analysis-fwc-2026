@@ -1,0 +1,73 @@
+match_id,date,team_home,team_away,venue,score_home,score_away,rank_home,apps_home,rank_away,apps_away,status_or_prediction
+1,2026-06-11,Mexico,South Africa,Mexico City,,,15,17,60,3,Mexico
+2,2026-06-12,Korea Republic,Czechia,Guadalajara,,,25,10,41,1,Korea Republic
+3,2026-06-12,Canada,Bosnia and Herzegovina,Toronto,,,30,2,65,1,Canada
+4,2026-06-13,USA,Paraguay,Los Angeles,,,16,11,40,8,USA
+5,2026-06-13,Qatar,Switzerland,Vancouver,,,55,1,19,12,Switzerland
+6,2026-06-13,Brazil,Morocco,Boston,,,6,22,8,6,Brazil
+7,2026-06-14,Haiti,Scotland,Vancouver,,,83,1,43,7,Scotland
+8,2026-06-14,Australia,Türkiye,San Francisco Bay Area,,,27,6,22,2,Australia
+9,2026-06-14,Germany,Curaçao,New York/New Jersey,,,10,10,82,0,Germany
+10,2026-06-14,Côte d'Ivoire,Ecuador,Miami,,,34,3,23,4,Ecuador
+11,2026-06-14,Netherlands,Japan,San Francisco Bay Area,,,7,10,18,7,Netherlands
+12,2026-06-15,Sweden,Tunisia,Houston,,,38,12,44,6,Sweden
+13,2026-06-15,Belgium,Egypt,Los Angeles,,,9,13,29,3,Belgium
+14,2026-06-15,IR Iran,New Zealand,Dallas,,,21,6,85,2,IR Iran
+15,2026-06-15,Spain,Cabo Verde,Seattle,,,2,16,69,0,Spain
+16,2026-06-15,Saudi Arabia,Uruguay,Atlanta,,,61,6,17,14,Uruguay
+17,2026-06-16,France,Senegal,Monterrey,,,1,16,14,3,France
+18,2026-06-16,Iraq,Norway,Mexico City,,,57,1,31,3,Norway
+19,2026-06-17,Argentina,Algeria,San Francisco Bay Area,,,3,18,28,4,Argentina
+20,2026-06-17,Austria,Jordan,Kansas City,,,24,7,63,0,Austria
+21,2026-06-17,Portugal,Congo DR,Philadelphia,,,5,8,46,0,Portugal
+22,2026-06-17,England,Croatia,Houston,,,4,16,11,6,England
+23,2026-06-17,Ghana,Panama,Dallas,,,74,4,33,1,Panama
+24,2026-06-18,Uzbekistan,Colombia,Toronto,,,50,0,13,6,Colombia
+25,2026-06-18,Czechia,South Africa,Guadalajara,,,41,1,60,3,Czechia
+26,2026-06-18,Switzerland,Bosnia and Herzegovina,Atlanta,,,19,12,65,1,Switzerland
+27,2026-06-18,Canada,Qatar,Vancouver,,,30,2,55,1,Canada
+28,2026-06-19,Mexico,Korea Republic,Mexico City,,,15,17,25,10,Mexico
+29,2026-06-19,USA,Australia,Seattle,,,16,11,27,6,USA
+30,2026-06-19,Scotland,Morocco,Kansas City,,,43,7,8,6,Morocco
+31,2026-06-20,Brazil,Haiti,Boston,,,6,22,83,1,Brazil
+32,2026-06-20,Türkiye,Paraguay,San Francisco Bay Area,,,22,2,40,8,Paraguay
+33,2026-06-20,Germany,Côte d'Ivoire,Houston,,,10,10,34,3,Germany
+34,2026-06-20,Netherlands,Sweden,Toronto,,,7,10,38,12,Netherlands
+35,2026-06-21,Ecuador,Curaçao,Philadelphia,,,23,4,82,0,Ecuador
+36,2026-06-21,Tunisia,Japan,Dallas,,,44,6,18,7,Japan
+37,2026-06-21,Belgium,IR Iran,Los Angeles,,,9,13,21,6,Belgium
+38,2026-06-21,Spain,Saudi Arabia,Miami,,,2,16,61,6,Spain
+39,2026-06-21,Uruguay,Cabo Verde,Seattle,,,17,14,69,0,Uruguay
+40,2026-06-22,New Zealand,Egypt,Atlanta,,,85,2,29,3,Egypt
+41,2026-06-22,Argentina,Austria,Dallas,,,3,18,24,7,Argentina
+42,2026-06-22,France,Iraq,New York/New Jersey,,,1,16,57,1,France
+43,2026-06-23,Norway,Senegal,Philadelphia,,,31,3,14,3,Senegal
+44,2026-06-23,Jordan,Algeria,San Francisco Bay Area,,,63,0,28,4,Algeria
+45,2026-06-23,Portugal,Uzbekistan,Boston,,,5,8,50,0,Portugal
+46,2026-06-23,England,Ghana,Houston,,,4,16,74,4,England
+47,2026-06-23,Panama,Croatia,Miami,,,33,1,11,6,Croatia
+48,2026-06-24,Colombia,Congo DR,Toronto,,,13,6,46,0,Colombia
+49,2026-06-24,Switzerland,Canada,Vancouver,,,19,12,30,2,Switzerland
+50,2026-06-24,Bosnia and Herzegovina,Qatar,Halifax,,,65,1,55,1,Qatar
+51,2026-06-24,Scotland,Brazil,Boston,,,43,7,6,22,Brazil
+52,2026-06-24,Morocco,Haiti,Philadelphia,,,8,6,83,1,Morocco
+53,2026-06-25,Czechia,Mexico,Mexico City,,,41,1,15,17,Mexico
+54,2026-06-25,South Africa,Korea Republic,Monterrey,,,60,3,25,10,Korea Republic
+55,2026-06-25,Curaçao,Côte d'Ivoire,Boston,,,82,0,34,3,Côte d'Ivoire
+56,2026-06-25,Ecuador,Germany,New York/New Jersey,,,23,4,10,10,Germany
+57,2026-06-25,Japan,Sweden,Dallas,,,18,7,38,12,Draw/Tight Match
+58,2026-06-25,Tunisia,Netherlands,Houston,,,44,6,7,10,Netherlands
+59,2026-06-26,Türkiye,USA,Los Angeles,,,22,2,16,11,USA
+60,2026-06-26,Paraguay,Australia,San Francisco Bay Area,,,40,8,27,6,Draw/Tight Match
+61,2026-06-26,Norway,France,New York/New Jersey,,,31,3,1,16,France
+62,2026-26-06,Senegal,Iraq,Philadelphia,,,14,3,57,1,Senegal
+63,2026-27-06,Egypt,IR Iran,Dallas,,,29,3,21,6,IR Iran
+64,2026-27-06,New Zealand,Belgium,Kansas City,,,85,2,9,13,Belgium
+65,2026-27-06,Cabo Verde,Saudi Arabia,Atlanta,,,69,0,61,6,Saudi Arabia
+66,2026-27-06,Uruguay,Spain,Miami,,,17,14,2,16,Spain
+67,2026-27-06,Colombia,Portugal,Dallas,,,13,6,5,8,Portugal
+68,2026-27-06,Congo DR,Uzbekistan,Houston,,,46,0,50,0,Draw/Tight Match
+69,2026-27-06,Panama,England,Miami,,,33,1,4,16,England
+70,2026-27-06,Croatia,Ghana,Atlanta,,,11,6,74,4,Croatia
+71,2026-28-06,Algeria,Austria,San Francisco Bay Area,,,28,4,24,7,Austria
+72,2026-28-06,Jordan,Argentina,Los Angeles,,,63,0,3,18,Argentina
