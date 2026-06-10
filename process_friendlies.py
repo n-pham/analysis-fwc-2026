@@ -1,21 +1,12 @@
 import csv
 
-teams_list = [
-    "Canada", "Mexico", "USA", "Algeria", "Argentina", "Australia", "Austria",
-    "Belgium", "Bosnia and Herzegovina", "Brazil", "Cabo Verde", "Colombia",
-    "Congo DR", "Côte d'Ivoire", "Croatia", "Curaçao", "Czechia", "Ecuador",
-    "Egypt", "England", "France", "Germany", "Ghana", "Haiti", "IR Iran",
-    "Iraq", "Japan", "Jordan", "Korea Republic", "Morocco", "Netherlands",
-    "New Zealand", "Norway", "Panama", "Paraguay", "Portugal", "Qatar",
-    "Saudi Arabia", "Scotland", "Senegal", "South Africa", "Spain", "Sweden",
-    "Switzerland", "Tunisia", "Türkiye", "Uruguay", "Uzbekistan"
-]
-
+# Maintain mapping for tournament teams to ensure consistency
 mapping = {
     "Czech Republic": "Czechia",
     "Turkey": "Türkiye",
     "South Korea": "Korea Republic",
     "D.R. Congo": "Congo DR",
+    "D.R.[1] Congo": "Congo DR",
     "Bosnia & Herzegovina": "Bosnia and Herzegovina",
     "Cape Verde": "Cabo Verde",
     "Ivory Coast": "Côte d'Ivoire",
@@ -35,7 +26,7 @@ Hungary,Kazakhstan,3,1
 Russia,Trinidad & Tobago,3,0
 Belarus,Burkina Faso,2,2
 Costa Rica U23,Cuba U23,0,0
-D.R. Congo,Chile,1,2
+D.R.[1] Congo,Chile,1,2
 Moldova U21,Georgia U21,3,2
 Armenia,Moldova,1,1
 Ethiopia,Malawi,1,1
@@ -164,7 +155,8 @@ Singapore,China,1,2
 Qatar U20,Wales U19,0,2
 Serbia U17,Romania U17,2,1
 Mexico,Serbia,5,1
-Czech Republic,Guatemala,3,1"""
+Czech Republic,Guatemala,3,1
+Ireland,Grenada,5,0"""
 
 with open("data/friendlies.csv", "w", newline="") as f:
     writer = csv.writer(f)
@@ -175,5 +167,5 @@ with open("data/friendlies.csv", "w", newline="") as f:
             home, away, s_h, s_a = parts
             home = mapping.get(home, home)
             away = mapping.get(away, away)
-            if home in teams_list or away in teams_list:
-                writer.writerow([home, away, s_h, s_a])
+            # Include ALL matches without filtering by teams_list
+            writer.writerow([home, away, s_h, s_a])
