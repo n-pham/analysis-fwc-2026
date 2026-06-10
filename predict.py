@@ -10,7 +10,11 @@ from sklearn.model_selection import train_test_split
 def load_data():
     teams = pl.read_csv("data/teams.csv")
     matches = pl.read_csv("data/matches.csv")
-    return teams, matches
+    try:
+        friendlies = pl.read_csv("data/friendlies.csv")
+    except Exception:
+        friendlies = None
+    return teams, matches, friendlies
 
 def get_slot_mapping():
     """
@@ -24,7 +28,29 @@ def get_slot_mapping():
         # "B2": "Argentina",
     }
 
-def preprocess_matches(matches, teams, mapping):
+def get_form_scores(friendlies, teams_list):
+    if friendlies is None:
+        return {team: 0 for team in teams_list}
+    
+    form = {team: 0 for team in teams_list}
+    for row in friendlies.to_dicts():
+        h, a, s_h, s_a = row["team_home"], row["team_away"], row["score_home"], row["score_away"]
+        if h in form:
+            if s_h > s_a: form[h] += 3
+            elif s_h == s_a: form[h] += 1
+        if a in form:
+            if s_a > s_h: form[a] += 3
+            elif s_a == s_h: form[a] += 1
+    return form
+
+def preprocess_matches(matches, teams, mapping, form_scores):
+    # Add form scores to teams
+    form_df = pl.DataFrame({
+        "team": list(form_scores.keys()),
+        "form_score": list(form_scores.values())
+    })
+    teams = teams.join(form_df, on="team", how="left")
+
     # Replace slots with actual teams based on the mapping
     matches = matches.with_columns([
         pl.col("team_home").replace(mapping).alias("team_home"),
@@ -33,11 +59,11 @@ def preprocess_matches(matches, teams, mapping):
     
     # Join with team data for home
     matches = matches.join(teams, left_on="team_home", right_on="team", how="left")
-    matches = matches.rename({"world_ranking": "rank_home", "appearances": "apps_home"})
+    matches = matches.rename({"world_ranking": "rank_home", "appearances": "apps_home", "form_score": "form_home"})
     
     # Join with team data for away
     matches = matches.join(teams, left_on="team_away", right_on="team", how="left")
-    matches = matches.rename({"world_ranking": "rank_away", "appearances": "apps_away"})
+    matches = matches.rename({"world_ranking": "rank_away", "appearances": "apps_away", "form_score": "form_away"})
     
     return matches
 
@@ -61,14 +87,18 @@ def predict_logic(struct_row):
     rank_a = struct_row["rank_away"]
     apps_h = struct_row["apps_home"]
     apps_a = struct_row["apps_away"]
+    form_h = struct_row["form_home"] or 0
+    form_a = struct_row["form_away"] or 0
     
     # If one or both teams are still slots (Unknown in teams.csv)
     if rank_h is None or rank_a is None:
         return f"Pending Draw ({t_h} vs {t_a})"
     
     # Heuristic Prediction
-    h_score = (200 - rank_h) + (apps_h * 5)
-    a_score = (200 - rank_a) + (apps_a * 5)
+    # Power ranking (max 200) + Apps (max 100) + Form (weighted)
+    # Form weight increased to 8 to better reflect recent momentum
+    h_score = (200 - rank_h) + (apps_h * 5) + (form_h * 8)
+    a_score = (200 - rank_a) + (apps_a * 5) + (form_a * 8)
     
     # Home advantage for hosts
     if t_h in ["Mexico", "Canada", "USA"]:
@@ -91,18 +121,21 @@ def update_elo(teams, matches):
 
 def main():
     print("Loading data...")
-    teams, matches = load_data()
+    teams, matches, friendlies = load_data()
     mapping = get_slot_mapping()
+    
+    print("Calculating form scores from friendlies...")
+    form_scores = get_form_scores(friendlies, teams["team"].to_list())
     
     print("Updating ELO (if results available)...")
     teams = update_elo(teams, matches)
     
     print("Preprocessing matches...")
-    processed_matches = preprocess_matches(matches, teams, mapping)
+    processed_matches = preprocess_matches(matches, teams, mapping, form_scores)
     
     print("Processing results and predictions...")
     results = processed_matches.with_columns(
-        pl.struct(["rank_home", "rank_away", "apps_home", "apps_away", "team_home", "team_away", "score_home", "score_away"])
+        pl.struct(["rank_home", "rank_away", "apps_home", "apps_away", "form_home", "form_away", "team_home", "team_away", "score_home", "score_away"])
         .map_elements(predict_logic, return_dtype=pl.String)
         .alias("status_or_prediction")
     )
