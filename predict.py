@@ -44,13 +44,26 @@ def get_form_scores(friendlies, matches, teams_list):
     for row in matches.to_dicts():
         h, a, s_h, s_a = row["team_home"], row["team_away"], row["score_home"], row["score_away"]
         if s_h is not None and s_a is not None:
-            weight = 5 # Significant weight for World Cup matches
+            weight = 10 # Even higher weight for World Cup matches
+            gd = s_h - s_a
             if h in form:
-                if s_h > s_a: form[h] += 3 * weight
-                elif s_h == s_a: form[h] += 1 * weight
+                if s_h > s_a: 
+                    form[h] += 3 * weight
+                    if gd >= 3: form[h] += 1 * weight # Dominance bonus
+                elif s_h == s_a: 
+                    form[h] += 1 * weight
+                else: 
+                    form[h] -= 1 * weight # Loss penalty
+                    if gd <= -3: form[h] -= 1 * weight # Crushing defeat penalty
             if a in form:
-                if s_a > s_h: form[a] += 3 * weight
-                elif s_a == s_h: form[a] += 1 * weight
+                if s_a > s_h: 
+                    form[a] += 3 * weight
+                    if gd <= -3: form[a] += 1 * weight # Dominance bonus
+                elif s_a == s_h: 
+                    form[a] += 1 * weight
+                else: 
+                    form[a] -= 1 * weight # Loss penalty
+                    if gd >= 3: form[a] -= 1 * weight # Crushing defeat penalty
     return form
 
 def calculate_injuries(matches, player_status):
@@ -133,8 +146,8 @@ def predict_logic(struct_row):
     if rank_h is None or rank_a is None:
         return f"Pending Draw ({t_h} vs {t_a})"
     
-    h_score = (200 - rank_h) + (apps_h * 5) + (form_h * 8) - (inj_h * 15)
-    a_score = (200 - rank_a) + (apps_a * 5) + (form_a * 8) - (inj_a * 15)
+    h_score = (200 - rank_h) + (apps_h * 12) + (form_h * 10) - (inj_h * 15)
+    a_score = (200 - rank_a) + (apps_a * 12) + (form_a * 10) - (inj_a * 15)
     
     if t_h in ["Mexico", "Canada", "USA"]: h_score += 20
     if t_a in ["Mexico", "Canada", "USA"]: a_score += 20

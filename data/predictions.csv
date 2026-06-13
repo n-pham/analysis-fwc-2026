@@ -1,12 +1,12 @@
 match_id,date,team_home,team_away,venue,score_home,score_away,rank_home,rank_away,apps_home,apps_away,form_home,form_away,injuries_home,injuries_away,status_or_prediction
-1,2026-06-11,Mexico,South Africa,Mexico City,2,0,15,60,17,3,18,1,0,0,ACTUAL: Mexico
-2,2026-06-12,Korea Republic,Czechia,Guadalajara,2,1,25,41,10,1,15,3,0,0,ACTUAL: Korea Republic
-3,2026-06-12,Canada,Bosnia and Herzegovina,Toronto,,,30,65,2,1,1,1,0,0,Canada
-4,2026-06-13,USA,Paraguay,Los Angeles,,,16,40,11,8,0,3,0,0,USA
+1,2026-06-11,Mexico,South Africa,Mexico City,2,0,15,60,17,3,33,-9,0,0,ACTUAL: Mexico
+2,2026-06-12,Korea Republic,Czechia,Guadalajara,2,1,25,41,10,1,30,-7,0,0,ACTUAL: Korea Republic
+3,2026-06-12,Canada,Bosnia and Herzegovina,Toronto,1,1,30,65,2,1,11,11,0,0,ACTUAL: Draw
+4,2026-06-13,USA,Paraguay,Los Angeles,4,1,16,40,11,8,40,-17,0,0,ACTUAL: USA
 5,2026-06-13,Qatar,Switzerland,Vancouver,,,55,19,1,12,1,1,0,0,Switzerland
 6,2026-06-13,Brazil,Morocco,Boston,,,6,8,22,6,3,1,0,0,Brazil
 7,2026-06-14,Haiti,Scotland,Vancouver,,,83,43,1,7,0,3,0,0,Scotland
-8,2026-06-14,Australia,Türkiye,San Francisco Bay Area,,,27,22,6,2,1,3,0,0,Draw/Tight Match
+8,2026-06-14,Australia,Türkiye,San Francisco Bay Area,,,27,22,6,2,1,3,0,0,Australia
 9,2026-06-14,Germany,Curaçao,New York/New Jersey,,,10,82,10,0,3,3,0,0,Germany
 10,2026-06-14,Côte d'Ivoire,Ecuador,Miami,,,34,23,3,4,3,3,0,0,Ecuador
 11,2026-06-14,Netherlands,Japan,San Francisco Bay Area,,,7,18,10,7,3,0,0,0,Netherlands
@@ -21,16 +21,16 @@ match_id,date,team_home,team_away,venue,score_home,score_away,rank_home,rank_awa
 20,2026-06-17,Austria,Jordan,Kansas City,,,24,63,7,0,0,0,0,0,Austria
 21,2026-06-17,Portugal,Congo DR,Philadelphia,,,5,46,8,0,3,0,0,0,Portugal
 22,2026-06-17,England,Croatia,Houston,,,4,11,16,6,3,3,0,0,England
-23,2026-06-17,Ghana,Panama,Dallas,,,74,33,4,1,0,1,0,0,Panama
+23,2026-06-17,Ghana,Panama,Dallas,,,74,33,4,1,0,1,0,0,Draw/Tight Match
 24,2026-06-18,Uzbekistan,Colombia,Toronto,,,50,13,0,6,0,3,0,0,Colombia
-25,2026-06-18,Czechia,South Africa,Guadalajara,,,41,60,1,3,3,1,0,2,Czechia
-26,2026-06-18,Switzerland,Bosnia and Herzegovina,Atlanta,,,19,65,12,1,1,1,0,0,Switzerland
-27,2026-06-18,Canada,Qatar,Vancouver,,,30,55,2,1,1,1,0,0,Canada
-28,2026-06-19,Mexico,Korea Republic,Mexico City,,,15,25,17,10,18,15,1,0,Mexico
-29,2026-06-19,USA,Australia,Seattle,,,16,27,11,6,0,1,0,0,USA
+25,2026-06-18,Czechia,South Africa,Guadalajara,,,41,60,1,3,-7,-9,0,2,Czechia
+26,2026-06-18,Switzerland,Bosnia and Herzegovina,Atlanta,,,19,65,12,1,1,11,0,0,Switzerland
+27,2026-06-18,Canada,Qatar,Vancouver,,,30,55,2,1,11,1,0,0,Canada
+28,2026-06-19,Mexico,Korea Republic,Mexico City,,,15,25,17,10,33,30,1,0,Mexico
+29,2026-06-19,USA,Australia,Seattle,,,16,27,11,6,40,1,0,0,USA
 30,2026-06-19,Scotland,Morocco,Kansas City,,,43,8,7,6,3,1,0,0,Draw/Tight Match
 31,2026-06-20,Brazil,Haiti,Boston,,,6,83,22,1,3,0,0,0,Brazil
-32,2026-06-20,Türkiye,Paraguay,San Francisco Bay Area,,,22,40,2,8,3,3,0,0,Draw/Tight Match
+32,2026-06-20,Türkiye,Paraguay,San Francisco Bay Area,,,22,40,2,8,3,-17,0,0,Türkiye
 33,2026-06-20,Germany,Côte d'Ivoire,Houston,,,10,34,10,3,3,3,0,0,Germany
 34,2026-06-20,Netherlands,Sweden,Toronto,,,7,38,10,12,3,0,0,0,Netherlands
 35,2026-06-21,Ecuador,Curaçao,Philadelphia,,,23,82,4,0,3,3,0,0,Ecuador
@@ -47,18 +47,18 @@ match_id,date,team_home,team_away,venue,score_home,score_away,rank_home,rank_awa
 46,2026-06-23,England,Ghana,Houston,,,4,74,16,4,3,0,0,0,England
 47,2026-06-23,Panama,Croatia,Miami,,,33,11,1,6,1,3,0,0,Croatia
 48,2026-06-24,Colombia,Congo DR,Toronto,,,13,46,6,0,3,0,0,0,Colombia
-49,2026-06-24,Switzerland,Canada,Vancouver,,,19,30,12,2,1,1,0,0,Switzerland
-50,2026-06-24,Bosnia and Herzegovina,Qatar,Halifax,,,65,55,1,1,1,1,0,0,Draw/Tight Match
+49,2026-06-24,Switzerland,Canada,Vancouver,,,19,30,12,2,1,11,0,0,Draw/Tight Match
+50,2026-06-24,Bosnia and Herzegovina,Qatar,Halifax,,,65,55,1,1,11,1,0,0,Bosnia and Herzegovina
 51,2026-06-24,Scotland,Brazil,Boston,,,43,6,7,22,3,3,0,0,Brazil
 52,2026-06-24,Morocco,Haiti,Philadelphia,,,8,83,6,1,1,0,0,0,Morocco
-53,2026-06-25,Czechia,Mexico,Mexico City,,,41,15,1,17,3,18,0,0,Mexico
-54,2026-06-25,South Africa,Korea Republic,Monterrey,,,60,25,3,10,1,15,0,0,Korea Republic
+53,2026-06-25,Czechia,Mexico,Mexico City,,,41,15,1,17,-7,33,0,0,Mexico
+54,2026-06-25,South Africa,Korea Republic,Monterrey,,,60,25,3,10,-9,30,0,0,Korea Republic
 55,2026-06-25,Curaçao,Côte d'Ivoire,Boston,,,82,34,0,3,3,3,0,0,Côte d'Ivoire
 56,2026-06-25,Ecuador,Germany,New York/New Jersey,,,23,10,4,10,3,3,0,0,Germany
-57,2026-06-25,Japan,Sweden,Dallas,,,18,38,7,12,0,0,0,0,Draw/Tight Match
+57,2026-06-25,Japan,Sweden,Dallas,,,18,38,7,12,0,0,0,0,Sweden
 58,2026-06-25,Tunisia,Netherlands,Houston,,,44,7,6,10,0,3,0,0,Netherlands
-59,2026-06-26,Türkiye,USA,Los Angeles,,,22,16,2,11,3,0,0,0,USA
-60,2026-06-26,Paraguay,Australia,San Francisco Bay Area,,,40,27,8,6,3,1,0,0,Draw/Tight Match
+59,2026-06-26,Türkiye,USA,Los Angeles,,,22,16,2,11,3,40,0,0,USA
+60,2026-06-26,Paraguay,Australia,San Francisco Bay Area,,,40,27,8,6,-17,1,0,0,Australia
 61,2026-06-26,Norway,France,New York/New Jersey,,,31,1,3,16,1,3,0,0,France
 62,2026-26-06,Senegal,Iraq,Philadelphia,,,14,57,3,1,1,0,0,0,Senegal
 63,2026-27-06,Egypt,IR Iran,Dallas,,,29,21,3,6,0,0,0,0,IR Iran

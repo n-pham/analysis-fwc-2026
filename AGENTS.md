@@ -12,8 +12,11 @@ This project predicts match results for the FIFA Soccer World Cup 2026 using his
 - **Machine Learning:** XGBoost
 
 ## Prediction Inputs
-- **Initial Data:** Current power rankings of soccer national teams.
-- **Incremental Match Results:** Used to dynamically update ELO ratings and "tempo points."
+- **Initial Data:** Current power rankings and historical "Appearances" (Tournament Pedigree).
+- **Incremental Match Results:** Used to dynamically update "tempo points" (Form).
+    - **Weighting:** World Cup matches are weighted 10x higher than friendlies.
+    - **Outcome Impact:** Points awarded for Wins (+3) and Draws (+1), with Penalties for Losses (-1).
+    - **Momentum/Dominance:** Bonuses for big wins (3+ goals) and extra penalties for crushing defeats (3+ goals).
 - **Incremental Player Data:** Key player injury updates.
 
 ## Operational Workflow for Match Results
