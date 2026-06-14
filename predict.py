@@ -26,7 +26,9 @@ def get_slot_mapping():
     """
     return {}
 
-def get_form_scores(friendlies, matches, teams_list):
+def get_form_scores(friendlies, matches, teams_df):
+    teams_list = teams_df["team"].to_list()
+    rank_map = {row["team"]: row["world_ranking"] for row in teams_df.to_dicts()}
     form = {team: 0 for team in teams_list}
     
     # Scores from friendlies
@@ -44,26 +46,49 @@ def get_form_scores(friendlies, matches, teams_list):
     for row in matches.to_dicts():
         h, a, s_h, s_a = row["team_home"], row["team_away"], row["score_home"], row["score_away"]
         if s_h is not None and s_a is not None:
-            weight = 10 # Even higher weight for World Cup matches
+            weight = 10 
+            r_h = rank_map.get(h, 100)
+            r_a = rank_map.get(a, 100)
             gd = s_h - s_a
+
+            # Home team calculation
             if h in form:
+                pts_h = 0
                 if s_h > s_a: 
-                    form[h] += 3 * weight
-                    if gd >= 3: form[h] += 1 * weight # Dominance bonus
+                    pts_h = 5 # Base win
+                    if r_a <= 15: pts_h += 5 # Elite opponent win bonus
+                    if r_a > 75: pts_h -= 2 # Minnow win adjustment
+                    if r_a < r_h: pts_h += (r_h - r_a) / 5.0 # Stronger underdog bonus
+                    if s_a == 0: pts_h += 2.0 # High Clean sheet bonus
+                    if gd >= 3: pts_h += 2 # Higher Dominance bonus
                 elif s_h == s_a: 
-                    form[h] += 1 * weight
+                    pts_h = 2 # Base draw
+                    if r_a <= 15: pts_h += 5 # Elite opponent draw bonus (The Morocco/Qatar Rule)
+                    if r_a < r_h: pts_h += (r_h - r_a) / 10.0 
                 else: 
-                    form[h] -= 1 * weight # Loss penalty
-                    if gd <= -3: form[h] -= 1 * weight # Crushing defeat penalty
+                    pts_h = -1
+                    if gd <= -3: pts_h -= 2 
+                form[h] += pts_h * weight
+
+            # Away team calculation
             if a in form:
+                pts_a = 0
                 if s_a > s_h: 
-                    form[a] += 3 * weight
-                    if gd <= -3: form[a] += 1 * weight # Dominance bonus
+                    pts_a = 5
+                    if r_h <= 15: pts_a += 5 # Elite opponent win bonus
+                    if r_h > 75: pts_a -= 2 # Minnow win adjustment
+                    if r_h < r_a: pts_a += (r_a - r_h) / 5.0
+                    if s_h == 0: pts_a += 2.0 # High Clean sheet bonus
+                    if gd <= -3: pts_a += 2
                 elif s_a == s_h: 
-                    form[a] += 1 * weight
+                    pts_a = 2
+                    if r_h <= 15: pts_a += 5 # Elite opponent draw bonus
+                    if r_h < r_a: pts_a += (r_a - r_h) / 10.0
                 else: 
-                    form[a] -= 1 * weight # Loss penalty
-                    if gd >= 3: form[a] -= 1 * weight # Crushing defeat penalty
+                    pts_a = -1
+                    if gd >= 3: pts_a -= 2
+                form[a] += pts_a * weight
+
     return form
 
 def calculate_injuries(matches, player_status):
@@ -107,7 +132,7 @@ def preprocess_matches(matches, teams, mapping, form_scores):
     # Add form scores to teams
     form_df = pl.DataFrame({
         "team": list(form_scores.keys()),
-        "form_score": list(form_scores.values())
+        "form_score": [float(v) for v in form_scores.values()]
     })
     teams = teams.join(form_df, on="team", how="left")
 
@@ -162,7 +187,7 @@ def main():
     mapping = get_slot_mapping()
     
     print("Calculating form scores (Friendlies + Tournament)...")
-    form_scores = get_form_scores(friendlies, matches, teams["team"].to_list())
+    form_scores = get_form_scores(friendlies, matches, teams)
     
     print("Calculating dynamic injuries...")
     matches_with_injuries = calculate_injuries(matches, player_status)
