@@ -57,17 +57,17 @@ def get_form_scores(friendlies, matches, teams_df):
                 if s_h > s_a: 
                     pts_h = 5 # Base win
                     if r_a <= 15: pts_h += 5 # Elite opponent win bonus
-                    if r_a > 75: pts_h -= 2 # Minnow win adjustment
-                    if r_a < r_h: pts_h += (r_h - r_a) / 5.0 # Stronger underdog bonus
-                    if s_a == 0: pts_h += 2.0 # High Clean sheet bonus
-                    if gd >= 3: pts_h += 2 # Higher Dominance bonus
+                    if r_a > 75: pts_h -= 1 # Reduced Minnow win adjustment
+                    if r_a < r_h: pts_h += (r_h - r_a) / 10.0 # Reduced underdog bonus
+                    if s_a == 0: pts_h += 1.0 # Reduced Clean sheet bonus
+                    if gd >= 3: pts_h += gd / 2.0 # Scaled Dominance bonus (rewarding big wins)
                 elif s_h == s_a: 
                     pts_h = 2 # Base draw
-                    if r_a <= 15: pts_h += 5 # Elite opponent draw bonus (The Morocco/Qatar Rule)
+                    if r_a <= 15: pts_h += 5 # Elite opponent draw bonus
                     if r_a < r_h: pts_h += (r_h - r_a) / 10.0 
                 else: 
                     pts_h = -1
-                    if gd <= -3: pts_h -= 2 
+                    if gd <= -3: pts_h -= abs(gd) / 2.0 
                 form[h] += pts_h * weight
 
             # Away team calculation
@@ -76,17 +76,17 @@ def get_form_scores(friendlies, matches, teams_df):
                 if s_a > s_h: 
                     pts_a = 5
                     if r_h <= 15: pts_a += 5 # Elite opponent win bonus
-                    if r_h > 75: pts_a -= 2 # Minnow win adjustment
-                    if r_h < r_a: pts_a += (r_a - r_h) / 5.0
-                    if s_h == 0: pts_a += 2.0 # High Clean sheet bonus
-                    if gd <= -3: pts_a += 2
+                    if r_h > 75: pts_a -= 1 # Reduced Minnow win adjustment
+                    if r_h < r_a: pts_a += (r_a - r_h) / 10.0
+                    if s_h == 0: pts_a += 1.0 # Reduced Clean sheet bonus
+                    if gd <= -3: pts_a += abs(gd) / 2.0
                 elif s_a == s_h: 
                     pts_a = 2
                     if r_h <= 15: pts_a += 5 # Elite opponent draw bonus
                     if r_h < r_a: pts_a += (r_a - r_h) / 10.0
                 else: 
                     pts_a = -1
-                    if gd >= 3: pts_a -= 2
+                    if gd >= 3: pts_a -= gd / 2.0
                 form[a] += pts_a * weight
 
     return form
@@ -171,8 +171,8 @@ def predict_logic(struct_row):
     if rank_h is None or rank_a is None:
         return f"Pending Draw ({t_h} vs {t_a})"
     
-    h_score = (200 - rank_h) + (apps_h * 12) + (form_h * 10) - (inj_h * 15)
-    a_score = (200 - rank_a) + (apps_a * 12) + (form_a * 10) - (inj_a * 15)
+    h_score = (200 - rank_h) + (apps_h * 12) + (form_h * 5) - (inj_h * 15)
+    a_score = (200 - rank_a) + (apps_a * 12) + (form_a * 5) - (inj_a * 15)
     
     if t_h in ["Mexico", "Canada", "USA"]: h_score += 20
     if t_a in ["Mexico", "Canada", "USA"]: a_score += 20

@@ -7,9 +7,9 @@ match_id,date,team_home,team_away,venue,score_home,score_away
 6,2026-06-13,Brazil,Morocco,Boston,1,1
 7,2026-06-14,Haiti,Scotland,Vancouver,0,1
 8,2026-06-14,Australia,Türkiye,San Francisco Bay Area,2,0
-9,2026-06-14,Germany,Curaçao,New York/New Jersey,,
-10,2026-06-14,Côte d'Ivoire,Ecuador,Miami,,
-11,2026-06-14,Netherlands,Japan,San Francisco Bay Area,,
+9,2026-06-14,Germany,Curaçao,New York/New Jersey,7,1
+10,2026-06-14,Côte d'Ivoire,Ecuador,Miami,1,0
+11,2026-06-14,Netherlands,Japan,San Francisco Bay Area,2,2
 12,2026-06-15,Sweden,Tunisia,Houston,,
 13,2026-06-15,Belgium,Egypt,Los Angeles,,
 14,2026-06-15,IR Iran,New Zealand,Dallas,,
