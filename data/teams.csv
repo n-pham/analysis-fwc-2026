@@ -1,49 +1,49 @@
-team,world_ranking,appearances
-Canada,30,2
-Mexico,15,17
-USA,16,11
-Algeria,28,4
-Argentina,3,18
-Australia,27,6
-Austria,24,7
-Belgium,9,13
-Bosnia and Herzegovina,65,1
-Brazil,6,22
-Cabo Verde,69,0
-Colombia,13,6
-Congo DR,46,0
-Côte d'Ivoire,34,3
-Croatia,11,6
-Curaçao,82,0
-Czechia,41,1
-Ecuador,23,4
-Egypt,29,3
-England,4,16
-France,1,16
-Germany,10,10
-Ghana,74,4
-Haiti,83,1
-IR Iran,21,6
-Iraq,57,1
-Japan,18,7
-Jordan,63,0
-Korea Republic,25,10
-Morocco,8,6
-Netherlands,7,10
-New Zealand,85,2
-Norway,31,3
-Panama,33,1
-Paraguay,40,8
-Portugal,5,8
-Qatar,55,1
-Saudi Arabia,61,6
-Scotland,43,7
-Senegal,14,3
-South Africa,60,3
-Spain,2,16
-Sweden,38,12
-Switzerland,19,12
-Tunisia,44,6
-Türkiye,22,2
-Uruguay,17,14
-Uzbekistan,50,0
+team,world_ranking,appearances,base_attack,base_defense
+Canada,30,2,85.0,85.0
+Mexico,15,17,92.5,92.5
+USA,16,11,92.0,92.0
+Algeria,28,4,86.0,86.0
+Argentina,3,18,103.5,103.5
+Australia,27,6,86.5,86.5
+Austria,24,7,88.0,88.0
+Belgium,9,13,100.5,100.5
+Bosnia and Herzegovina,65,1,67.5,67.5
+Brazil,6,22,102.0,102.0
+Cabo Verde,69,0,30.0,90.0
+Colombia,13,6,93.5,93.5
+Congo DR,46,0,77.0,77.0
+Côte d'Ivoire,34,3,83.0,83.0
+Croatia,11,6,94.5,94.5
+Curaçao,82,0,59.0,59.0
+Czechia,41,1,79.5,79.5
+Ecuador,23,4,88.5,88.5
+Egypt,29,3,85.5,85.5
+England,4,16,103.0,103.0
+France,1,16,104.5,104.5
+Germany,10,10,100.0,100.0
+Ghana,74,4,63.0,63.0
+Haiti,83,1,58.5,58.5
+IR Iran,21,6,89.5,89.5
+Iraq,57,1,71.5,71.5
+Japan,18,7,91.0,91.0
+Jordan,63,0,68.5,68.5
+Korea Republic,25,10,87.5,87.5
+Morocco,8,6,101.0,101.0
+Netherlands,7,10,101.5,101.5
+New Zealand,85,2,57.5,57.5
+Norway,31,3,84.5,84.5
+Panama,33,1,83.5,83.5
+Paraguay,40,8,80.0,80.0
+Portugal,5,8,102.5,102.5
+Qatar,55,1,72.5,72.5
+Saudi Arabia,61,6,69.5,69.5
+Scotland,43,7,78.5,78.5
+Senegal,14,3,93.0,93.0
+South Africa,60,3,70.0,70.0
+Spain,2,16,104.0,104.0
+Sweden,38,12,81.0,81.0
+Switzerland,19,12,90.5,90.5
+Tunisia,44,6,78.0,78.0
+Türkiye,22,2,89.0,89.0
+Uruguay,17,14,91.5,91.5
+Uzbekistan,50,0,75.0,75.0

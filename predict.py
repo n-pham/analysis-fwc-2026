@@ -28,66 +28,37 @@ def get_slot_mapping():
 
 def get_form_scores(friendlies, matches, teams_df):
     teams_list = teams_df["team"].to_list()
-    rank_map = {row["team"]: row["world_ranking"] for row in teams_df.to_dicts()}
-    form = {team: 0 for team in teams_list}
+    # Initialize separate attack and defense form
+    form = {team: {"attack": 0.0, "defense": 0.0} for team in teams_list}
     
-    # Scores from friendlies
+    # Scores from friendlies (Low weight)
     if friendlies is not None:
         for row in friendlies.to_dicts():
             h, a, s_h, s_a = row["team_home"], row["team_away"], row["score_home"], row["score_away"]
-            if h in form and s_h is not None and s_a is not None:
-                if s_h > s_a: form[h] += 3
-                elif s_h == s_a: form[h] += 1
-            if a in form and s_h is not None and s_a is not None:
-                if s_a > s_h: form[a] += 3
-                elif s_a == s_h: form[a] += 1
+            if s_h is None or s_a is None: continue
+            
+            if h in form:
+                form[h]["attack"] += s_h * 1.0
+                if s_a == 0: form[h]["defense"] += 2.0
+            if a in form:
+                form[a]["attack"] += s_a * 1.0
+                if s_h == 0: form[a]["defense"] += 2.0
                 
-    # Scores from actual tournament matches (Higher weight for tournament form)
+    # Scores from actual tournament matches (High weight)
     for row in matches.to_dicts():
         h, a, s_h, s_a = row["team_home"], row["team_away"], row["score_home"], row["score_away"]
         if s_h is not None and s_a is not None:
-            weight = 10 
-            r_h = rank_map.get(h, 100)
-            r_a = rank_map.get(a, 100)
-            gd = s_h - s_a
-
-            # Home team calculation
+            # Home team
             if h in form:
-                pts_h = 0
-                if s_h > s_a: 
-                    pts_h = 5 # Base win
-                    if r_a <= 15: pts_h += 5 # Elite opponent win bonus
-                    if r_a > 75: pts_h -= 1 # Reduced Minnow win adjustment
-                    if r_a < r_h: pts_h += (r_h - r_a) / 10.0 # Reduced underdog bonus
-                    if s_a == 0: pts_h += 1.0 # Reduced Clean sheet bonus
-                    if gd >= 3: pts_h += gd / 2.0 # Scaled Dominance bonus (rewarding big wins)
-                elif s_h == s_a: 
-                    pts_h = 2 # Base draw
-                    if r_a <= 15: pts_h += 5 # Elite opponent draw bonus
-                    if r_a < r_h: pts_h += (r_h - r_a) / 10.0 
-                else: 
-                    pts_h = -1
-                    if gd <= -3: pts_h -= abs(gd) / 2.0 
-                form[h] += pts_h * weight
-
-            # Away team calculation
+                form[h]["attack"] += s_h * 5.0
+                if s_a == 0: form[h]["defense"] += 10.0
+                form[h]["defense"] -= s_a * 3.0
+            
+            # Away team
             if a in form:
-                pts_a = 0
-                if s_a > s_h: 
-                    pts_a = 5
-                    if r_h <= 15: pts_a += 5 # Elite opponent win bonus
-                    if r_h > 75: pts_a -= 1 # Reduced Minnow win adjustment
-                    if r_h < r_a: pts_a += (r_a - r_h) / 10.0
-                    if s_h == 0: pts_a += 1.0 # Reduced Clean sheet bonus
-                    if gd <= -3: pts_a += abs(gd) / 2.0
-                elif s_a == s_h: 
-                    pts_a = 2
-                    if r_h <= 15: pts_a += 5 # Elite opponent draw bonus
-                    if r_h < r_a: pts_a += (r_a - r_h) / 10.0
-                else: 
-                    pts_a = -1
-                    if gd >= 3: pts_a -= gd / 2.0
-                form[a] += pts_a * weight
+                form[a]["attack"] += s_a * 5.0
+                if s_h == 0: form[a]["defense"] += 10.0
+                form[a]["defense"] -= s_h * 3.0
 
     return form
 
@@ -132,7 +103,8 @@ def preprocess_matches(matches, teams, mapping, form_scores):
     # Add form scores to teams
     form_df = pl.DataFrame({
         "team": list(form_scores.keys()),
-        "form_score": [float(v) for v in form_scores.values()]
+        "form_attack": [float(v["attack"]) for v in form_scores.values()],
+        "form_defense": [float(v["defense"]) for v in form_scores.values()]
     })
     teams = teams.join(form_df, on="team", how="left")
 
@@ -144,11 +116,25 @@ def preprocess_matches(matches, teams, mapping, form_scores):
     
     # Join home
     matches = matches.join(teams, left_on="team_home", right_on="team", how="left")
-    matches = matches.rename({"world_ranking": "rank_home", "appearances": "apps_home", "form_score": "form_home"})
+    matches = matches.rename({
+        "world_ranking": "rank_home", 
+        "appearances": "apps_home", 
+        "base_attack": "ba_home",
+        "base_defense": "bd_home",
+        "form_attack": "fa_home",
+        "form_defense": "fd_home"
+    })
     
     # Join away
     matches = matches.join(teams, left_on="team_away", right_on="team", how="left")
-    matches = matches.rename({"world_ranking": "rank_away", "appearances": "apps_away", "form_score": "form_away"})
+    matches = matches.rename({
+        "world_ranking": "rank_away", 
+        "appearances": "apps_away",
+        "base_attack": "ba_away",
+        "base_defense": "bd_away",
+        "form_attack": "fa_away",
+        "form_defense": "fd_away"
+    })
     
     return matches
 
@@ -158,35 +144,60 @@ def predict_logic(struct_row):
     t_h = struct_row["team_home"]
     t_a = struct_row["team_away"]
 
-    if s_h is not None and s_a is not None:
-        if s_h > s_a: return f"ACTUAL: {t_h}"
-        elif s_a > s_h: return f"ACTUAL: {t_a}"
-        else: return "ACTUAL: Draw"
-
-    rank_h, rank_a = struct_row["rank_home"], struct_row["rank_away"]
-    apps_h, apps_a = struct_row["apps_home"], struct_row["apps_away"]
-    form_h, form_a = struct_row["form_home"] or 0, struct_row["form_away"] or 0
+    # Base Metrics
+    ba_h, bd_h = struct_row["ba_home"], struct_row["bd_home"]
+    ba_a, bd_a = struct_row["ba_away"], struct_row["bd_away"]
+    
+    # Form Metrics
+    fa_h, fd_h = struct_row["fa_home"] or 0, struct_row["fd_home"] or 0
+    fa_a, fd_a = struct_row["fa_away"] or 0, struct_row["fd_away"] or 0
+    
+    # Pedigree (Appearances)
+    apps_h, apps_a = struct_row["apps_home"] or 0, struct_row["apps_away"] or 0
+    
+    # Injuries
     inj_h, inj_a = struct_row["injuries_home"], struct_row["injuries_away"]
     
-    if rank_h is None or rank_a is None:
-        return f"Pending Draw ({t_h} vs {t_a})"
-    
-    # Adjusted weights: Pedigree (apps) increased, Form multiplier decreased to prevent runaway scores.
-    # Margin for draws increased to reflect tournament volatility.
-    h_score = (200 - rank_h) + (apps_h * 15) + (form_h * 2) - (inj_h * 15)
-    a_score = (200 - rank_a) + (apps_a * 15) + (form_a * 2) - (inj_a * 15)
-    
-    # Tournament Host Bonus
-    if t_h in ["Mexico", "Canada", "USA"]: h_score += 20
-    if t_a in ["Mexico", "Canada", "USA"]: a_score += 20
-
-    # Specific Team Modifiers (e.g., Cabo Verde's defensive discipline/coach/GK)
-    if t_h == "Cabo Verde": h_score += 30
-    if t_a == "Cabo Verde": a_score += 30
+    if ba_h is None or ba_a is None:
+        pred = f"Pending Draw ({t_h} vs {t_a})"
+    else:
+        # Calculate Effective Attack and Defense
+        # Formula: Base + Form + Pedigree - (Injuries * 10)
+        h_atk = ba_h + fa_h + apps_h - (inj_h * 10)
+        h_def = bd_h + fd_h + apps_h - (inj_h * 10)
         
-    if h_score > a_score + 25: return t_h
-    elif a_score > h_score + 25: return t_a
-    else: return "Draw/Tight Match"
+        a_atk = ba_a + fa_a + apps_a - (inj_a * 10)
+        a_def = bd_a + fd_a + apps_a - (inj_a * 10)
+        
+        # Host Bonus
+        if t_h in ["Mexico", "Canada", "USA"]:
+            h_atk += 10
+            h_def += 10
+        if t_a in ["Mexico", "Canada", "USA"]:
+            a_atk += 10
+            a_def += 10
+
+        # Matchup Dynamics
+        # How well does Home Attack break through Away Defense? (Clipped at 0)
+        h_scoring_potential = max(0, h_atk - a_def)
+        # How well does Away Attack break through Home Defense? (Clipped at 0)
+        a_scoring_potential = max(0, a_atk - h_def)
+        
+        diff = h_scoring_potential - a_scoring_potential
+            
+        # Margin for Draw
+        # A lower margin reflects that it takes less dominance to predict a winner
+        if diff > 20: pred = t_h
+        elif diff < -20: pred = t_a
+        else: pred = "Draw/Tight Match"
+
+    if s_h is not None and s_a is not None:
+        if s_h > s_a: actual = t_h
+        elif s_a > s_h: actual = t_a
+        else: actual = "Draw"
+        return f"ACTUAL: {actual} (Model: {pred})"
+    
+    return pred
 
 def main():
     print("Loading data...")
@@ -213,9 +224,11 @@ def main():
     ordered_columns = [
         "match_id", "date", "team_home", "team_away", "venue",
         "score_home", "score_away",
-        "rank_home", "rank_away",
+        "ba_home", "ba_away",
+        "bd_home", "bd_away",
+        "fa_home", "fa_away",
+        "fd_home", "fd_away",
         "apps_home", "apps_away",
-        "form_home", "form_away",
         "injuries_home", "injuries_away",
         "status_or_prediction"
     ]
@@ -224,9 +237,10 @@ def main():
     final_cols = [c for c in ordered_columns if c in results.columns]
     results = results.select(final_cols)
     
-    print("\nResults/Predictions (Sample with injuries):")
-    cols_to_show = ["match_id", "team_home", "team_away", "injuries_home", "injuries_away", "status_or_prediction"]
-    print(results.filter(pl.col("match_id").is_in([1, 25, 28])).select(cols_to_show))
+    print("\nResults/Predictions Verification (Historical & Future):")
+    cols_to_show = ["match_id", "team_home", "team_away", "status_or_prediction"]
+    # Show first few matches (historical) and some future ones
+    print(results.filter(pl.col("match_id").is_in([1, 6, 11, 15, 17, 39])).select(cols_to_show))
     
     results.write_csv("data/predictions.csv")
     print("\nFull output saved to data/predictions.csv (with ordered columns)")
