@@ -171,14 +171,21 @@ def predict_logic(struct_row):
     if rank_h is None or rank_a is None:
         return f"Pending Draw ({t_h} vs {t_a})"
     
-    h_score = (200 - rank_h) + (apps_h * 12) + (form_h * 5) - (inj_h * 15)
-    a_score = (200 - rank_a) + (apps_a * 12) + (form_a * 5) - (inj_a * 15)
+    # Adjusted weights: Pedigree (apps) increased, Form multiplier decreased to prevent runaway scores.
+    # Margin for draws increased to reflect tournament volatility.
+    h_score = (200 - rank_h) + (apps_h * 15) + (form_h * 2) - (inj_h * 15)
+    a_score = (200 - rank_a) + (apps_a * 15) + (form_a * 2) - (inj_a * 15)
     
+    # Tournament Host Bonus
     if t_h in ["Mexico", "Canada", "USA"]: h_score += 20
     if t_a in ["Mexico", "Canada", "USA"]: a_score += 20
+
+    # Specific Team Modifiers (e.g., Cabo Verde's defensive discipline/coach/GK)
+    if t_h == "Cabo Verde": h_score += 30
+    if t_a == "Cabo Verde": a_score += 30
         
-    if h_score > a_score + 15: return t_h
-    elif a_score > h_score + 15: return t_a
+    if h_score > a_score + 25: return t_h
+    elif a_score > h_score + 25: return t_a
     else: return "Draw/Tight Match"
 
 def main():
