@@ -189,7 +189,7 @@ def predict_logic(struct_row):
         # A lower margin reflects that it takes less dominance to predict a winner
         if diff > 20: pred = t_h
         elif diff < -20: pred = t_a
-        else: pred = "Draw/Tight Match"
+        else: pred = f"Draw/Tight Match ({diff:+.1f})"
 
     if s_h is not None and s_a is not None:
         if s_h > s_a: actual = t_h
