@@ -28,6 +28,7 @@ def get_slot_mapping():
 
 def get_form_scores(friendlies, matches, teams_df):
     teams_list = teams_df["team"].to_list()
+    rank_map = {row["team"]: row["world_ranking"] for row in teams_df.to_dicts()}
     # Initialize separate attack and defense form
     form = {team: {"attack": 0.0, "defense": 0.0} for team in teams_list}
     
@@ -44,21 +45,29 @@ def get_form_scores(friendlies, matches, teams_df):
                 form[a]["attack"] += s_a * 1.0
                 if s_h == 0: form[a]["defense"] += 2.0
                 
-    # Scores from actual tournament matches (High weight)
+    # Scores from actual tournament matches (High weight + Opponent Rank adjustment)
     for row in matches.to_dicts():
         h, a, s_h, s_a = row["team_home"], row["team_away"], row["score_home"], row["score_away"]
         if s_h is not None and s_a is not None:
+            h_rank = rank_map.get(h, 50)
+            a_rank = rank_map.get(a, 50)
+            
+            # Opponent Rank Weight: Better opponent (lower rank) = higher weight
+            # Range: Rank 1 -> ~2.0x, Rank 50 -> 1.0x, Rank 100 -> ~0.0x
+            h_weight = max(0.1, (101 - a_rank) / 50.0)
+            a_weight = max(0.1, (101 - h_rank) / 50.0)
+
             # Home team
             if h in form:
-                form[h]["attack"] += s_h * 5.0
-                if s_a == 0: form[h]["defense"] += 10.0
-                form[h]["defense"] -= s_a * 3.0
+                form[h]["attack"] += s_h * 5.0 * h_weight
+                if s_a == 0: form[h]["defense"] += 10.0 * h_weight
+                form[h]["defense"] -= s_a * 3.0 * (1.0 / h_weight) # Conceding against weak team hurts more
             
             # Away team
             if a in form:
-                form[a]["attack"] += s_a * 5.0
-                if s_h == 0: form[a]["defense"] += 10.0
-                form[a]["defense"] -= s_h * 3.0
+                form[a]["attack"] += s_a * 5.0 * a_weight
+                if s_h == 0: form[a]["defense"] += 10.0 * a_weight
+                form[a]["defense"] -= s_h * 3.0 * (1.0 / a_weight)
 
     return form
 
@@ -152,22 +161,25 @@ def predict_logic(struct_row):
     fa_h, fd_h = struct_row["fa_home"] or 0, struct_row["fd_home"] or 0
     fa_a, fd_a = struct_row["fa_away"] or 0, struct_row["fd_away"] or 0
 
+    # World Rankings (for Bus Factor)
+    rank_h, rank_a = struct_row["rank_home"], struct_row["rank_away"]
+
     # Adjust form to be "prior" if the match has a result, 
     # so the Model prediction in brackets is based on pre-match data.
     if s_h is not None and s_a is not None:
-        fa_h -= s_h * 5.0
-        fd_h -= (10.0 if s_a == 0 else 0) - s_a * 3.0
-        fa_a -= s_a * 5.0
-        fd_a -= (10.0 if s_h == 0 else 0) - s_h * 3.0
+        h_weight = max(0.1, (101 - rank_a) / 50.0)
+        a_weight = max(0.1, (101 - rank_h) / 50.0)
+
+        fa_h -= s_h * 5.0 * h_weight
+        fd_h -= (10.0 * h_weight if s_a == 0 else 0) - (s_a * 3.0 * (1.0 / h_weight))
+        fa_a -= s_a * 5.0 * a_weight
+        fd_a -= (10.0 * a_weight if s_h == 0 else 0) - (s_h * 3.0 * (1.0 / a_weight))
     
     # Pedigree (Appearances)
     apps_h, apps_a = struct_row["apps_home"] or 0, struct_row["apps_away"] or 0
     
     # Injuries
     inj_h, inj_a = struct_row["injuries_home"], struct_row["injuries_away"]
-
-    # World Rankings (for Bus Factor)
-    rank_h, rank_a = struct_row["rank_home"], struct_row["rank_away"]
     
     if ba_h is None or ba_a is None:
         pred = f"Pending Draw ({t_h} vs {t_a})"

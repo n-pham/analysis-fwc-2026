@@ -9,7 +9,7 @@ This project predicts match results for the FIFA Soccer World Cup 2026 using his
 - **Language:** Python
 - **Package Management:** uv, pyproject.toml
 - **Data Processing:** Polars
-- **Machine Learning:** XGBoost
+- **Machine Learning:** XGBoost (Note: Models like XGBoost are highly susceptible to overfitting given the limited amount of tournament data; use with caution and prefer simpler baseline models for validation).
 
 ## Prediction Inputs
 - **Initial Data:** Current power rankings and historical "Appearances" (Tournament Pedigree).
