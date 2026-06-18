@@ -151,6 +151,14 @@ def predict_logic(struct_row):
     # Form Metrics
     fa_h, fd_h = struct_row["fa_home"] or 0, struct_row["fd_home"] or 0
     fa_a, fd_a = struct_row["fa_away"] or 0, struct_row["fd_away"] or 0
+
+    # Adjust form to be "prior" if the match has a result, 
+    # so the Model prediction in brackets is based on pre-match data.
+    if s_h is not None and s_a is not None:
+        fa_h -= s_h * 5.0
+        fd_h -= (10.0 if s_a == 0 else 0) - s_a * 3.0
+        fa_a -= s_a * 5.0
+        fd_a -= (10.0 if s_h == 0 else 0) - s_h * 3.0
     
     # Pedigree (Appearances)
     apps_h, apps_a = struct_row["apps_home"] or 0, struct_row["apps_away"] or 0
