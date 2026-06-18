@@ -61,13 +61,19 @@ def get_form_scores(friendlies, matches, teams_df):
             if h in form:
                 form[h]["attack"] += s_h * 5.0 * h_weight
                 if s_a == 0: form[h]["defense"] += 10.0 * h_weight
-                form[h]["defense"] -= s_a * 3.0 * (1.0 / h_weight) # Conceding against weak team hurts more
+                
+                penalty_h = s_a * 3.0 * (1.0 / h_weight)
+                if s_h - s_a >= 3: penalty_h *= 0.1 # Dominance Offset: reduce penalty if winning by 3+
+                form[h]["defense"] -= penalty_h
             
             # Away team
             if a in form:
                 form[a]["attack"] += s_a * 5.0 * a_weight
                 if s_h == 0: form[a]["defense"] += 10.0 * a_weight
-                form[a]["defense"] -= s_h * 3.0 * (1.0 / a_weight)
+                
+                penalty_a = s_h * 3.0 * (1.0 / a_weight)
+                if s_a - s_h >= 3: penalty_a *= 0.1 # Dominance Offset: reduce penalty if winning by 3+
+                form[a]["defense"] -= penalty_a
 
     return form
 

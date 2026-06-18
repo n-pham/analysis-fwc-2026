@@ -13,10 +13,11 @@ This project predicts match results for the FIFA Soccer World Cup 2026 using his
 
 ## Prediction Inputs
 - **Initial Data:** Current power rankings and historical "Appearances" (Tournament Pedigree).
-- **Incremental Match Results:** Used to dynamically update "tempo points" (Form).
-    - **Weighting:** World Cup matches are weighted 10x higher than friendlies.
-    - **Outcome Impact:** Points awarded for Wins (+3) and Draws (+1), with Penalties for Losses (-1).
-    - **Momentum/Dominance:** Bonuses for big wins (3+ goals) and extra penalties for crushing defeats (3+ goals).
+- **Incremental Match Results:** Used to dynamically update "Form" (Attack and Defense points).
+    - **Weighting:** Tournament matches have higher base weights than friendlies.
+    - **Opponent Rank Adjustment:** Points are scaled by the opponent's world ranking: `(101 - opponent_rank) / 50.0`. Better opponents yield more points.
+    - **Attack Points:** Calculated as `goals * base_weight * rank_weight`.
+    - **Defense Points:** Clean sheets grant a bonus (`10 * rank_weight`); conceding goals results in a penalty (`goals * 3 * (1 / rank_weight)`), meaning conceding to a low-ranked team is heavily penalized.
 - **Incremental Player Data:** Key player injury updates.
 
 ## Operational Workflow for Match Results
