@@ -165,17 +165,31 @@ def predict_logic(struct_row):
     
     # Injuries
     inj_h, inj_a = struct_row["injuries_home"], struct_row["injuries_away"]
+
+    # World Rankings (for Bus Factor)
+    rank_h, rank_a = struct_row["rank_home"], struct_row["rank_away"]
     
     if ba_h is None or ba_a is None:
         pred = f"Pending Draw ({t_h} vs {t_a})"
     else:
         # Calculate Effective Attack and Defense
         # Formula: Base + Form + Pedigree - (Injuries * 10)
-        h_atk = ba_h + fa_h + apps_h - (inj_h * 10)
-        h_def = bd_h + fd_h + apps_h - (inj_h * 10)
+        # Experience (Pedigree) is weighted 1.2x for attack and 0.5x for defense.
+        h_atk = ba_h + fa_h + (apps_h * 1.2) - (inj_h * 10)
+        h_def = bd_h + fd_h + (apps_h * 0.5) - (inj_h * 10)
         
-        a_atk = ba_a + fa_a + apps_a - (inj_a * 10)
-        a_def = bd_a + fd_a + apps_a - (inj_a * 10)
+        a_atk = ba_a + fa_a + (apps_a * 1.2) - (inj_a * 10)
+        a_def = bd_a + fd_a + (apps_a * 0.5) - (inj_a * 10)
+
+        # "Parking the Bus" Factor (Defensive Resilience)
+        # If one team is ranked much lower than the other, they get a defense boost.
+        if rank_h is not None and rank_a is not None:
+            # Home is underdog
+            if rank_h - rank_a > 25:
+                h_def += (rank_h - rank_a - 25) * 0.8
+            # Away is underdog
+            if rank_a - rank_h > 25:
+                a_def += (rank_a - rank_h - 25) * 0.8
         
         # Host Bonus
         if t_h in ["Mexico", "Canada", "USA"]:
@@ -195,8 +209,8 @@ def predict_logic(struct_row):
             
         # Margin for Draw
         # A lower margin reflects that it takes less dominance to predict a winner
-        if diff > 20: pred = t_h
-        elif diff < -20: pred = t_a
+        if diff > 15: pred = t_h
+        elif diff < -15: pred = t_a
         else: pred = f"Draw/Tight Match ({diff:+.1f})"
 
     if s_h is not None and s_a is not None:
@@ -232,6 +246,7 @@ def main():
     ordered_columns = [
         "match_id", "date", "team_home", "team_away", "venue",
         "score_home", "score_away",
+        "rank_home", "rank_away",
         "ba_home", "ba_away",
         "bd_home", "bd_away",
         "fa_home", "fa_away",
