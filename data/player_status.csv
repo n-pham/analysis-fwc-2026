@@ -1,4 +1,8 @@
 player_name,team,is_key,unavailable_match_ids
 Cesar Montes,Mexico,True,"28"
-Sphephelo Sithole,South Africa,True,"25"
+Sphephelo Sithole,South Africa,False,"25"
 Themba Zwane,South Africa,True,"25"
+Homam Ahmed,Qatar,True,"50"
+Assim Madibo,Qatar,False,"50"
+Tarik Muharemović,Bosnia and Herzegovina,False,"50"
+Teboho Mokoena,South Africa,True,"54"

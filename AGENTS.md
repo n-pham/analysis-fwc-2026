@@ -18,7 +18,8 @@ This project predicts match results for the FIFA Soccer World Cup 2026 using his
     - **Opponent Rank Adjustment:** Points are scaled by the opponent's world ranking: `(101 - opponent_rank) / 50.0`. Better opponents yield more points.
     - **Attack Points:** Calculated as `goals * base_weight * rank_weight`.
     - **Defense Points:** Clean sheets grant a bonus (`10 * rank_weight`); conceding goals results in a penalty (`goals * 3 * (1 / rank_weight)`), meaning conceding to a low-ranked team is heavily penalized.
-- **Incremental Player Data:** Key player injury updates.
+    - **Tactical Filter:** Matches marked as `is_tactical=1` in `data/matches.csv` are excluded from form updates to prevent strategic results (e.g., "parking the bus" for a draw to advance) from skewing performance metrics.
+- **Incremental Player Data:** Key player injury/suspension updates. The `is_key` flag is reserved strictly for "pillars" of the team (top important players). Their absence triggers a significant penalty to both attack and defense metrics, reflecting the systemic impact of losing a world-class player.
 
 ## Operational Workflow for Match Results
 When an actual match result is available:

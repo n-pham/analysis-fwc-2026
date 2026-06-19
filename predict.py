@@ -48,6 +48,12 @@ def get_form_scores(friendlies, matches, teams_df):
     # Scores from actual tournament matches (High weight + Opponent Rank adjustment)
     for row in matches.to_dicts():
         h, a, s_h, s_a = row["team_home"], row["team_away"], row["score_home"], row["score_away"]
+        
+        # Skip tactical matches where the result is driven by incentives rather than form
+        is_tactical = row.get("is_tactical", 0)
+        if is_tactical == 1:
+            continue
+
         if s_h is not None and s_a is not None:
             h_rank = rank_map.get(h, 50)
             a_rank = rank_map.get(a, 50)
