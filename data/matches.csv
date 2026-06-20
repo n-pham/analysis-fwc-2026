@@ -27,10 +27,10 @@ match_id,date,team_home,team_away,venue,score_home,score_away,is_tactical
 26,2026-06-18,Switzerland,Bosnia and Herzegovina,Atlanta,4,1,0
 27,2026-06-18,Canada,Qatar,Vancouver,6,0,0
 28,2026-06-19,Mexico,Korea Republic,Mexico City,1,0,0
-29,2026-06-19,USA,Australia,Seattle,,,0
-30,2026-06-19,Scotland,Morocco,Kansas City,,,0
-31,2026-06-20,Brazil,Haiti,Boston,,,0
-32,2026-06-20,Türkiye,Paraguay,San Francisco Bay Area,,,0
+29,2026-06-19,USA,Australia,Seattle,2,0,0
+30,2026-06-19,Scotland,Morocco,Kansas City,0,1,0
+31,2026-06-20,Brazil,Haiti,Boston,3,0,0
+32,2026-06-20,Türkiye,Paraguay,San Francisco Bay Area,0,1,0
 33,2026-06-20,Germany,Côte d'Ivoire,Houston,,,0
 34,2026-06-20,Netherlands,Sweden,Toronto,,,0
 35,2026-06-21,Ecuador,Curaçao,Philadelphia,,,0
@@ -50,14 +50,14 @@ match_id,date,team_home,team_away,venue,score_home,score_away,is_tactical
 49,2026-06-24,Switzerland,Canada,Vancouver,,,1
 50,2026-06-24,Bosnia and Herzegovina,Qatar,Halifax,,,0
 51,2026-06-24,Scotland,Brazil,Boston,,,0
-52,2026-06-24,Morocco,Haiti,Philadelphia,,,0
+52,2026-06-24,Morocco,Haiti,Philadelphia,,,1
 53,2026-06-25,Czechia,Mexico,Mexico City,,,1
 54,2026-06-25,South Africa,Korea Republic,Monterrey,,,0
 55,2026-06-25,Curaçao,Côte d'Ivoire,Boston,,,0
 56,2026-06-25,Ecuador,Germany,New York/New Jersey,,,0
 57,2026-06-25,Japan,Sweden,Dallas,,,0
 58,2026-06-25,Tunisia,Netherlands,Houston,,,0
-59,2026-06-26,Türkiye,USA,Los Angeles,,,0
+59,2026-06-26,Türkiye,USA,Los Angeles,,,1
 60,2026-06-26,Paraguay,Australia,San Francisco Bay Area,,,0
 61,2026-06-26,Norway,France,New York/New Jersey,,,0
 62,2026-26-06,Senegal,Iraq,Philadelphia,,,0
