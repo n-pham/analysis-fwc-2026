@@ -159,7 +159,23 @@ def preprocess_matches(matches, teams, mapping, form_scores):
     
     return matches
 
+def extract_model_pred(pred_str):
+    if pred_str and " (Model: " in pred_str:
+        start_idx = pred_str.find(" (Model: ") + len(" (Model: ")
+        model_pred = pred_str[start_idx:]
+        if model_pred.endswith(")"):
+            # If it ends with )), it's a non-corrupted Draw/Tight Match.
+            if model_pred.endswith("))"):
+                return model_pred[:-1]
+            # If it ends with ) and it's a Draw/Tight Match, it's corrupted (missing wrapper ).
+            if "Draw/Tight Match" in model_pred:
+                return model_pred
+            # If it ends with ) and it's a win/loss, it's non-corrupted.
+            return model_pred[:-1]
+    return pred_str
+
 def predict_logic(struct_row):
+
     s_h = struct_row["score_home"]
     s_a = struct_row["score_away"]
     t_h = struct_row["team_home"]
@@ -260,9 +276,43 @@ def main():
     processed_matches = preprocess_matches(matches_with_injuries, teams, mapping, form_scores)
     
     print("Processing results and predictions...")
+    
+    # Load existing predictions to implement high-water mark logic
+    try:
+        existing_preds_df = pl.read_csv("data/predictions.csv")
+        preds_map = {row["match_id"]: row["status_or_prediction"] for row in existing_preds_df.to_dicts()}
+    except Exception:
+        preds_map = {}
+
+    # High water mark: max match_id of matches that have results but aren't marked ACTUAL
+    high_water_mark = 0
+    for row in matches.to_dicts():
+        m_id = row["match_id"]
+        s_h = row["score_home"]
+        pred = preds_map.get(m_id, "")
+        if s_h is not None and "ACTUAL" not in pred:
+            high_water_mark = max(high_water_mark, m_id)
+
+    def process_row(row):
+        m_id = row["match_id"]
+        if m_id <= high_water_mark:
+            existing_pred = preds_map.get(m_id, "Pending")
+            s_h, s_a = row["score_home"], row["score_away"]
+            if s_h is not None and s_a is not None:
+                t_h, t_a = row["team_home"], row["team_away"]
+                if s_h > s_a: actual = t_h
+                elif s_a > s_h: actual = t_a
+                else: actual = "Draw"
+                
+                model_pred = extract_model_pred(existing_pred)
+                return f"ACTUAL: {actual} (Model: {model_pred})"
+            return existing_pred
+        else:
+            return predict_logic(row)
+
     results = processed_matches.with_columns(
         pl.struct(processed_matches.columns)
-        .map_elements(predict_logic, return_dtype=pl.String)
+        .map_elements(process_row, return_dtype=pl.String)
         .alias("status_or_prediction")
     )
     

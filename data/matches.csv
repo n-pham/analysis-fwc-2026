@@ -31,10 +31,10 @@ match_id,date,team_home,team_away,venue,score_home,score_away,is_tactical
 30,2026-06-19,Scotland,Morocco,Kansas City,0,1,0
 31,2026-06-20,Brazil,Haiti,Boston,3,0,0
 32,2026-06-20,Türkiye,Paraguay,San Francisco Bay Area,0,1,0
-33,2026-06-20,Germany,Côte d'Ivoire,Houston,,,0
-34,2026-06-20,Netherlands,Sweden,Toronto,,,0
-35,2026-06-21,Ecuador,Curaçao,Philadelphia,,,0
-36,2026-06-21,Tunisia,Japan,Dallas,,,0
+33,2026-06-20,Germany,Côte d'Ivoire,Houston,2,1,0
+34,2026-06-20,Netherlands,Sweden,Toronto,5,1,0
+35,2026-06-21,Ecuador,Curaçao,Philadelphia,0,0,0
+36,2026-06-21,Tunisia,Japan,Dallas,0,4,0
 37,2026-06-21,Belgium,IR Iran,Los Angeles,,,0
 38,2026-06-21,Spain,Saudi Arabia,Miami,,,0
 39,2026-06-21,Uruguay,Cabo Verde,Seattle,,,0
