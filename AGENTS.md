@@ -42,6 +42,9 @@ When an actual match result is available:
 - **Accuracy:** Maintain and update ELO/tempo points meticulously based on incremental match results.
 - **Context Awareness:** Factor in the impact of key player injuries on team strength and match outcomes.
 - **Model Evaluation:** Use the `warmup_excluded_accuracy()` metric (which now also excludes tactical matches) to gauge real‑world performance.
+- **XGBoost Note:** XGBoost cannot be reliably installed in the current execution environment (missing OpenMP runtime). Future recommendations should avoid relying on XGBoost and instead focus on lighter models (e.g., Logistic Regression) or further heuristic improvements.
+- **Knockout‑stage helper:** The script `model_comparison_2.py` (suffix `_2`) adds knockout‑specific features (stage flag, penalty‑shootout flag, rest‑days, stage weight) and supports a 4‑class outcome (including penalty‑shootout wins). Use it once the tournament advances to the knockout rounds.
+
 
 - **Efficiency:** Utilize Polars for high-performance data manipulation and feature engineering.
 - **Accuracy:** Maintain and update ELO/tempo points meticulously based on incremental match results.

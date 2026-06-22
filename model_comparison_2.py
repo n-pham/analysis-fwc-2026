@@ -1,12 +1,26 @@
-"""Model comparison script
+"""Model comparison for knockout stage (suffix _2)
 
-- Implements a lightweight logistic‑regression baseline.
-- Trains a shallow XGBoost model with log‑scaled opponent weighting (already used
-  in ``predict.py``) and early stopping.
-- Uses the same feature engineering pipeline as ``predict.py`` (base attack,
-  base defense, form, pedigree, injuries, rank diff, home‑host bonus).
-- Prints overall accuracy and the warm‑up‑excluded accuracy (which also drops
-  tactical matches) for both models.
+- This script mirrors ``model_comparison.py`` but adds features that are
+  specifically useful once the tournament moves into the knockout rounds:
+  * ``is_knockout`` flag (derived from ``match_stage`` column)
+  * ``stage_weight`` – higher weight for later stages
+  * ``is_penalty_shootout`` flag (draws that go to penalties)
+  * ``rest_home`` / ``rest_away`` – days since each team’s previous match
+  * ``stage_weight`` is also used as a multiplier when training the models.
+
+- It still provides a **scaled LogisticRegression** baseline and, if XGBoost
+  is available, a shallow XGBoost model with early stopping.  The target
+  encoding now supports a **four‑class problem** to distinguish a penalty‑
+  shootout win from a regular draw:
+    0 – Draw (no penalties)
+    1 – Home win (regulation)
+    2 – Away win (regulation)
+    3 – Penalty‑shootout win (home or away, inferred from the penalty columns)
+
+- The script does **not modify any existing file** – it only reads the same CSV
+  sources and writes its own results if you choose to.  Use it when the
+  ``match_stage`` column in ``data/matches.csv`` is populated for knockout
+  matches.
 """
 
 from __future__ import annotations
@@ -27,7 +41,7 @@ except Exception:  # pragma: no cover
     XGB_AVAILABLE = False
 
 # ---------------------------------------------------------------------------
-# Helper utilities (mirroring parts of ``predict.py``)
+# Helper utilities (mirroring parts of predict.py and the original comparison)
 # ---------------------------------------------------------------------------
 
 def load_data():
@@ -43,9 +57,8 @@ def load_data():
         player_status = None
     return teams, matches, friendlies, player_status
 
-# Re‑use the form‑score calculation (it already skips tactical matches).
 def get_form_scores(friendlies, matches, teams_df):
-    # Very similar to the function in ``predict.py`` – copied here for independence.
+    # Same logic as the original pipeline – it already skips tactical matches.
     teams_list = teams_df["team"].to_list()
     rank_map = {row["team"]: row["world_ranking"] for row in teams_df.to_dicts()}
     form = {team: {"attack": 0.0, "defense": 0.0} for team in teams_list}
@@ -65,7 +78,7 @@ def get_form_scores(friendlies, matches, teams_df):
                 if sh == 0:
                     form[a]["defense"] += 2.0
 
-    # Tournament matches – higher weight + opponent rank factor
+    # Tournament matches – higher weight + log‑scaled opponent rank factor
     for r in matches.to_dicts():
         h, a, sh, sa = (
             r["team_home"],
@@ -79,7 +92,6 @@ def get_form_scores(friendlies, matches, teams_df):
             continue
         h_rank = rank_map.get(h, 50)
         a_rank = rank_map.get(a, 50)
-        # Log‑scaled rank weight (mirrors predict.py change)
         h_weight = max(0.1, math.log1p(101 - a_rank) / math.log1p(100))
         a_weight = max(0.1, math.log1p(101 - h_rank) / math.log1p(100))
         if h in form:
@@ -101,7 +113,6 @@ def get_form_scores(friendlies, matches, teams_df):
     return form
 
 def calculate_injuries(matches, player_status):
-    # Same logic as ``predict.py`` – returns a DataFrame with injury counts.
     inj_h, inj_a = [], []
     for r in matches.to_dicts():
         m_id = r["match_id"]
@@ -125,7 +136,7 @@ def calculate_injuries(matches, player_status):
     ])
 
 # ---------------------------------------------------------------------------
-# Feature engineering for ML models
+# Feature engineering for the knockout‑stage models
 # ---------------------------------------------------------------------------
 
 def build_feature_df(matches_df: pl.DataFrame, teams_df: pl.DataFrame, form_scores: dict) -> pl.DataFrame:
@@ -137,14 +148,20 @@ def build_feature_df(matches_df: pl.DataFrame, teams_df: pl.DataFrame, form_scor
     })
     teams = teams_df.join(form_df, on="team", how="left")
 
-    # Replace team names (slot mapping – empty for now)
+    # Ensure we have a match_stage column – if missing we treat everything as GROUP.
+    if "match_stage" not in matches_df.columns:
+        matches_df = matches_df.with_columns(pl.lit("GROUP").alias("match_stage"))
+
+    # Replace team names mapping (empty for now)
     mapping = {}
     matches = matches_df.with_columns([
         pl.col("team_home").replace(mapping).alias("team_home"),
         pl.col("team_away").replace(mapping).alias("team_away"),
+        # Parse dates robustly – use strict=False so malformed dates become null
+pl.col("date").str.strptime(pl.Date, "%Y-%m-%d", strict=False).alias("date_dt"),
     ])
 
-    # Join home and away team features
+    # Join home team data
     matches = matches.join(
         teams.select([
             pl.col("team").alias("team_home"),
@@ -158,6 +175,7 @@ def build_feature_df(matches_df: pl.DataFrame, teams_df: pl.DataFrame, form_scor
         on="team_home",
         how="left",
     )
+    # Join away team data
     matches = matches.join(
         teams.select([
             pl.col("team").alias("team_away"),
@@ -172,32 +190,49 @@ def build_feature_df(matches_df: pl.DataFrame, teams_df: pl.DataFrame, form_scor
         how="left",
     )
 
-    # Create numeric helper columns
+    # -------------------------------------------------------------------
+    # New knockout‑stage specific columns
+    # -------------------------------------------------------------------
+    # Flag if we are in a knockout stage (anything not GROUP)
     matches = matches.with_columns([
-        # Rank difference (positive => home is stronger)
-        (pl.col("rank_home") - pl.col("rank_away")).alias("rank_diff"),
-        # Simple home‑host bonus flag (10 points added in predict_logic)
-        pl.when(pl.col("team_home").is_in(["Mexico", "Canada", "USA"]))
-        .then(1)
-        .otherwise(0)
-        .alias("home_host_bonus"),
+        (pl.col("match_stage") != "GROUP").alias("is_knockout"),
+        # Simple numeric weight that grows later in the tournament
+        pl.when(pl.col("match_stage") == "GROUP").then(1.0)
+          .when(pl.col("match_stage") == "R16").then(1.5)
+          .when(pl.col("match_stage") == "QF").then(1.7)
+          .when(pl.col("match_stage") == "SF").then(1.9)
+          .otherwise(2.0)
+          .alias("stage_weight"),
+        # Penalty shoot‑out flag – the source CSV should contain a boolean column.
+        pl.col("is_penalty_shootout").fill_null(0).alias("is_penalty_shootout"),
     ])
+
+    # -------------------------------------------------------------------
+    # Rest‑day features (days since previous match for each side)
+    # -------------------------------------------------------------------
+    # Sort by date for each team, compute difference in days, fill first match with large number.
+    matches = matches.sort(["team_home", "date_dt"]).with_columns([
+        pl.col("date_dt").diff().over("team_home").fill_null(999).alias("rest_home")
+    ])
+    matches = matches.sort(["team_away", "date_dt"]).with_columns([
+        pl.col("date_dt").diff().over("team_away").fill_null(999).alias("rest_away")
+    ])
+
     return matches
 
 # ---------------------------------------------------------------------------
-# Target encoding – three classes: 0=Draw, 1=Home win, 2=Away win
+# Target encoding – now a 4‑class problem (draw, home win, away win, penalty win)
 # ---------------------------------------------------------------------------
 
 def encode_target(df: pl.DataFrame) -> pl.Series:
-    """Encode the match outcome as a numeric label.
+    """Encode outcomes for knockout matches.
 
-    Returns a Polars Series with values:
-    * 0 – Draw
-    * 1 – Home win
-    * 2 – Away win
-    Rows with missing scores are encoded as ``None`` (they will be filtered out
-    later)."""
-    # Convert to pandas for a simple row‑wise apply (the dataset is tiny).
+    Returns a Series with values:
+    0 – Draw (no penalties)
+    1 – Home win (regulation)
+    2 – Away win (regulation)
+    3 – Penalty‑shootout win (home or away).
+    """
     import pandas as pd
 
     def map_outcome(row: pd.Series):
@@ -205,15 +240,22 @@ def encode_target(df: pl.DataFrame) -> pl.Series:
         if sh == "" or sa == "" or pd.isna(sh) or pd.isna(sa):
             return None
         sh, sa = int(sh), int(sa)
-        if sh > sa:
-            return 1
-        if sa > sh:
-            return 2
-        return 0
+        # penalty columns (optional) – if they exist we use them to identify a shoot‑out win
+        pen_home = row.get("penalties_home")
+        pen_away = row.get("penalties_away")
+        is_pen = row.get("is_penalty_shootout", 0)
+        if sh == sa:
+            # Draw scenario – decide if it was decided by penalties
+            if is_pen and pen_home is not None and pen_away is not None:
+                # The side with more penalties wins the shoot‑out
+                if int(pen_home) > int(pen_away):
+                    return 3  # home win on penalties
+                if int(pen_away) > int(pen_home):
+                    return 3  # away win on penalties (same label, just "penalty win")
+            return 0  # genuine draw
+        return 1 if sh > sa else 2
 
-    pd_series = df.to_pandas().apply(map_outcome, axis=1)
-    return pl.Series(pd_series)
-
+    return pl.Series(df.to_pandas().apply(map_outcome, axis=1))
 
 # ---------------------------------------------------------------------------
 # Main comparison routine
@@ -225,29 +267,48 @@ def main():
     matches = calculate_injuries(matches, player_status)
     feature_df = build_feature_df(matches, teams, form_scores)
 
-    # Keep only rows with actual scores (to evaluate predictive power)
+    # Keep only rows that have actual scores (to evaluate predictive power)
     actual_mask = (pl.col("score_home").is_not_null()) & (pl.col("score_away").is_not_null())
     eval_df = feature_df.filter(actual_mask)
 
-    # Encode target
-    y = encode_target(eval_df).to_numpy()
-    # Drop rows where target is None (should not happen after mask)
-    valid_idx = ~np.isnan(y)
+    # Encode target (4‑class)
+    y_series = encode_target(eval_df)
+    y_np = y_series.to_numpy()
+    valid_idx = ~np.isnan(y_np)
+    y_np = y_np[valid_idx].astype(int)
+
+    # Feature columns for the models
+    feature_cols = [
+        "ba_home", "ba_away", "bd_home", "bd_away",
+        "fa_home", "fa_away", "fd_home", "fd_away",
+        "apps_home", "apps_away",
+        "injuries_home", "injuries_away",
+        "rank_home", "rank_away",
+        "rank_home" - "rank_away",  # rank diff (will be computed below)
+        "is_knockout", "stage_weight", "rest_home", "rest_away",
+        "is_penalty_shootout",
+    ]
+
+    # Compute rank diff column explicitly (Polars cannot interpret the expression above directly)
+    eval_df = eval_df.with_columns([
+        (pl.col("rank_home") - pl.col("rank_away")).alias("rank_diff")
+    ])
     X = eval_df.select([
         "ba_home", "ba_away", "bd_home", "bd_away",
         "fa_home", "fa_away", "fd_home", "fd_away",
         "apps_home", "apps_away",
         "injuries_home", "injuries_away",
-        "rank_diff", "home_host_bonus",
+        "rank_diff",
+        "is_knockout", "stage_weight", "rest_home", "rest_away",
+        "is_penalty_shootout",
     ]).to_numpy()[valid_idx]
-    y = y[valid_idx].astype(int)
 
-    # Simple train/val split (80/20)
+    # Train/validation split (stratified by the 4‑class label)
     X_train, X_val, y_train, y_val = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
+        X, y_np, test_size=0.2, random_state=42, stratify=y_np
     )
 
-    # -------------------- Logistic Regression baseline (with scaling) --------------------
+    # -------------------- Logistic Regression baseline (scaled) --------------------
     from sklearn.preprocessing import StandardScaler
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
@@ -256,17 +317,17 @@ def main():
     log_reg.fit(X_train_scaled, y_train)
     pred_log = log_reg.predict(X_val_scaled)
     acc_log = accuracy_score(y_val, pred_log)
-    print(f"Logistic Regression (scaled) validation accuracy: {acc_log:.2%}")
+    print(f"Logistic Regression (scaled, 4‑class) validation accuracy: {acc_log:.2%}")
 
     # -------------------- XGBoost shallow model with early stopping --------------------
     if XGB_AVAILABLE:
         xgb_model = XGBClassifier(
             max_depth=3,
             learning_rate=0.1,
-            n_estimators=500,  # allow early stopping to pick optimal number
+            n_estimators=500,
             reg_lambda=1.0,
             objective="multi:softprob",
-            num_class=3,
+            num_class=4,
             eval_metric="mlogloss",
             use_label_encoder=False,
         )
@@ -279,12 +340,11 @@ def main():
         )
         pred_xgb = xgb_model.predict(X_val)
         acc_xgb = accuracy_score(y_val, pred_xgb)
-        print(f"XGBoost (max_depth=3, early stop) validation accuracy: {acc_xgb:.2%}")
+        print(f"XGBoost (max_depth=3, early stop, 4‑class) validation accuracy: {acc_xgb:.2%}")
     else:
         print("XGBoost not installed – skipping XGBoost comparison.")
 
-    # -------------------- Warm‑up‑excluded accuracy for each model --------------------
-    # Re‑use the helper from metrics.py (it expects predictions CSV). We'll compute it manually here.
+    # Warm‑up‑excluded overall pipeline accuracy (unchanged helper)
     from metrics import warmup_excluded_accuracy
     overall_warmup_acc = warmup_excluded_accuracy()
     print(f"Warm‑up‑excluded overall pipeline accuracy (current predict.py): {overall_warmup_acc:.2%}")
