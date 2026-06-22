@@ -1,4 +1,5 @@
 import polars as pl
+import math
 try:
     import xgboost as xgb
     XGBOOST_AVAILABLE = True
@@ -60,8 +61,9 @@ def get_form_scores(friendlies, matches, teams_df):
             
             # Opponent Rank Weight: Better opponent (lower rank) = higher weight
             # Range: Rank 1 -> ~2.0x, Rank 50 -> 1.0x, Rank 100 -> ~0.0x
-            h_weight = max(0.1, (101 - a_rank) / 50.0)
-            a_weight = max(0.1, (101 - h_rank) / 50.0)
+            import math
+            h_weight = max(0.1, math.log1p(101 - a_rank) / math.log1p(100))
+            a_weight = max(0.1, math.log1p(101 - h_rank) / math.log1p(100))
 
             # Home team
             if h in form:

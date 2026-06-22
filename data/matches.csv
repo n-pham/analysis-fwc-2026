@@ -35,10 +35,10 @@ match_id,date,team_home,team_away,venue,score_home,score_away,is_tactical
 34,2026-06-20,Netherlands,Sweden,Toronto,5,1,0
 35,2026-06-21,Ecuador,Curaçao,Philadelphia,0,0,0
 36,2026-06-21,Tunisia,Japan,Dallas,0,4,0
-37,2026-06-21,Belgium,IR Iran,Los Angeles,,,0
-38,2026-06-21,Spain,Saudi Arabia,Miami,,,0
-39,2026-06-21,Uruguay,Cabo Verde,Seattle,,,0
-40,2026-06-22,New Zealand,Egypt,Atlanta,,,0
+37,2026-06-21,Belgium,IR Iran,Los Angeles,0,0,0
+38,2026-06-21,Spain,Saudi Arabia,Miami,4,0,0
+39,2026-06-21,Uruguay,Cabo Verde,Seattle,2,2,0
+40,2026-06-22,New Zealand,Egypt,Atlanta,1,3,0
 41,2026-06-22,Argentina,Austria,Dallas,,,0
 42,2026-06-22,France,Iraq,New York/New Jersey,,,0
 43,2026-06-23,Norway,Senegal,Philadelphia,,,0

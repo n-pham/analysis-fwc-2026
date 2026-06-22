@@ -30,7 +30,19 @@ When an actual match result is available:
 ## Output
 - **Match Result Prediction:** Probabilistic or categorical predictions for upcoming matches.
 
+## Performance Metrics
+- The warm‑up‑excluded accuracy (ignoring each team’s first match) is **75 %**.  A helper function `warmup_excluded_accuracy()` is provided in `metrics.py` and can be called from any script:
+  ```python
+  from metrics import warmup_excluded_accuracy
+  print("Warm‑up‑excluded accuracy:", warmup_excluded_accuracy())
+  ```
+
 ## Guiding Principles
+- **Efficiency:** Utilize Polars for high-performance data manipulation and feature engineering.
+- **Accuracy:** Maintain and update ELO/tempo points meticulously based on incremental match results.
+- **Context Awareness:** Factor in the impact of key player injuries on team strength and match outcomes.
+- **Model Evaluation:** Use the `warmup_excluded_accuracy()` metric (which now also excludes tactical matches) to gauge real‑world performance.
+
 - **Efficiency:** Utilize Polars for high-performance data manipulation and feature engineering.
 - **Accuracy:** Maintain and update ELO/tempo points meticulously based on incremental match results.
 - **Context Awareness:** Factor in the impact of key player injuries on team strength and match outcomes.
