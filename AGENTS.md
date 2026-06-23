@@ -49,3 +49,9 @@ When an actual match result is available:
 - **Efficiency:** Utilize Polars for high-performance data manipulation and feature engineering.
 - **Accuracy:** Maintain and update ELO/tempo points meticulously based on incremental match results.
 - **Context Awareness:** Factor in the impact of key player injuries on team strength and match outcomes.
+
+# Tool Constraints
+- You do NOT have a tool named "search". Do not call it.
+- To search for text patterns or code strings inside a file, use the "grep" tool instead.
+- To find files by name, use the "find" tool.
+- Alternatively, you can use the "bash" tool to run standard shell search utilities.

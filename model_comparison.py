@@ -33,6 +33,11 @@ except Exception:  # pragma: no cover
 def load_data():
     teams = pl.read_csv("data/teams.csv")
     matches = pl.read_csv("data/matches.csv")
+    # Cast score columns to Int64 (blank cells become null)
+    matches = matches.with_columns([
+        pl.col("score_home").cast(pl.Int64, strict=False),
+        pl.col("score_away").cast(pl.Int64, strict=False),
+    ])
     try:
         friendlies = pl.read_csv("data/friendlies.csv")
     except Exception:
@@ -176,11 +181,13 @@ def build_feature_df(matches_df: pl.DataFrame, teams_df: pl.DataFrame, form_scor
     matches = matches.with_columns([
         # Rank difference (positive => home is stronger)
         (pl.col("rank_home") - pl.col("rank_away")).alias("rank_diff"),
-        # Simple home‑host bonus flag (10 points added in predict_logic)
+        # Absolute rank difference (magnitude only)
+        (pl.col("rank_home") - pl.col("rank_away")).abs().alias("abs_rank_diff"),
+        # Host bonus expressed as the actual 10 points used in predict_logic
         pl.when(pl.col("team_home").is_in(["Mexico", "Canada", "USA"]))
-        .then(1)
+        .then(10)
         .otherwise(0)
-        .alias("home_host_bonus"),
+        .alias("host_bonus"),
     ])
     return matches
 
@@ -238,7 +245,7 @@ def main():
         "fa_home", "fa_away", "fd_home", "fd_away",
         "apps_home", "apps_away",
         "injuries_home", "injuries_away",
-        "rank_diff", "home_host_bonus",
+        "rank_diff", "host_bonus",
     ]).to_numpy()[valid_idx]
     y = y[valid_idx].astype(int)
 
@@ -247,23 +254,56 @@ def main():
         X, y, test_size=0.2, random_state=42, stratify=y
     )
 
-    # -------------------- Logistic Regression baseline (with scaling) --------------------
+    # -------------------- Logistic Regression (tuned) --------------------
+    # Baseline tuned LR (already above) – we keep it as reference
     from sklearn.preprocessing import StandardScaler
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_val_scaled = scaler.transform(X_val)
-    log_reg = LogisticRegression(max_iter=500, class_weight="balanced")
+    log_reg = LogisticRegression(
+        max_iter=1000,
+        C=2.0,                # try a larger C for less regularisation
+        penalty='l2',
+        solver='lbfgs',
+        class_weight='balanced',
+    )
     log_reg.fit(X_train_scaled, y_train)
     pred_log = log_reg.predict(X_val_scaled)
     acc_log = accuracy_score(y_val, pred_log)
-    print(f"Logistic Regression (scaled) validation accuracy: {acc_log:.2%}")
+    print(f"Logistic Regression (tuned) validation accuracy: {acc_log:.2%}")
+
+    # -------------------- Random Forest --------------------
+    from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+    rf = RandomForestClassifier(
+        n_estimators=400,
+        max_depth=None,
+        class_weight='balanced',
+        random_state=42,
+        n_jobs=-1,
+    )
+    rf.fit(X_train, y_train)
+    pred_rf = rf.predict(X_val)
+    acc_rf = accuracy_score(y_val, pred_rf)
+    print(f"Random Forest validation accuracy: {acc_rf:.2%}")
+
+    # -------------------- Gradient Boosting --------------------
+    gb = GradientBoostingClassifier(
+        n_estimators=250,
+        learning_rate=0.05,
+        max_depth=3,
+        random_state=42,
+    )
+    gb.fit(X_train, y_train)
+    pred_gb = gb.predict(X_val)
+    acc_gb = accuracy_score(y_val, pred_gb)
+    print(f"Gradient Boosting validation accuracy: {acc_gb:.2%}")
 
     # -------------------- XGBoost shallow model with early stopping --------------------
     if XGB_AVAILABLE:
         xgb_model = XGBClassifier(
             max_depth=3,
             learning_rate=0.1,
-            n_estimators=500,  # allow early stopping to pick optimal number
+            n_estimators=500,
             reg_lambda=1.0,
             objective="multi:softprob",
             num_class=3,
@@ -288,6 +328,31 @@ def main():
     from metrics import warmup_excluded_accuracy
     overall_warmup_acc = warmup_excluded_accuracy()
     print(f"Warm‑up‑excluded overall pipeline accuracy (current predict.py): {overall_warmup_acc:.2%}")
+
+    # -------------------------------------------------------
+    # Additional LR experiments: varying C, L1 penalty, custom class weights
+    # -------------------------------------------------------
+    from sklearn.utils import compute_class_weight
+    import itertools
+    Cs = [0.5, 1.0, 2.0, 5.0]
+    penalties = ["l2", "l1"]
+    # Custom weight dict gives extra weight to the minority class (draw = 0)
+    # We'll compute the balanced weights and then boost class 0 by 2x.
+    classes = np.unique(y_train)
+    balanced_weights = compute_class_weight(class_weight='balanced', classes=classes, y=y_train)
+    balanced_dict = dict(zip(classes, balanced_weights))
+    custom_dict = balanced_dict.copy()
+    if 0 in custom_dict:
+        custom_dict[0] *= 2.0
+    weight_options = ["balanced", custom_dict]
+
+    best = (0, None, None, 0.0)
+    for C, pen, w in itertools.product(Cs, penalties, weight_options):
+        # l1 penalty requires liblinear solver; l2 can use lbfgs
+        solver = "liblinear" if pen == "l1" else "lbfgs"
+        try:
+            lr = LogisticRegression(max_iter=2000, C=C, penalty=pen, solver=solver, class_weight=w)
+
 
 if __name__ == "__main__":
     main()
