@@ -40,9 +40,9 @@ match_id,date,team_home,team_away,venue,score_home,score_away,is_tactical
 39,2026-06-21,Uruguay,Cabo Verde,Seattle,2,2,0
 40,2026-06-22,New Zealand,Egypt,Atlanta,1,3,0
 41,2026-06-22,Argentina,Austria,Dallas,,,0
-42,2026-06-22,France,Iraq,New York/New Jersey,,,0
-43,2026-06-23,Norway,Senegal,Philadelphia,,,0
-44,2026-06-23,Jordan,Algeria,San Francisco Bay Area,,,0
+42,2026-06-22,France,Iraq,New York/New Jersey,3,0,0
+43,2026-06-23,Norway,Senegal,Philadelphia,3,2,0
+44,2026-06-23,Jordan,Algeria,San Francisco Bay Area,1,2,0
 45,2026-06-23,Portugal,Uzbekistan,Boston,,,0
 46,2026-06-23,England,Ghana,Houston,,,0
 47,2026-06-23,Panama,Croatia,Miami,,,0

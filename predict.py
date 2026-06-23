@@ -11,6 +11,11 @@ from sklearn.model_selection import train_test_split
 def load_data():
     teams = pl.read_csv("data/teams.csv")
     matches = pl.read_csv("data/matches.csv")
+    # Ensure score columns are numeric; empty strings become null
+    matches = matches.with_columns([
+        pl.col("score_home").cast(pl.Int64, strict=False),
+        pl.col("score_away").cast(pl.Int64, strict=False)
+    ])
     try:
         friendlies = pl.read_csv("data/friendlies.csv")
     except Exception:
@@ -317,6 +322,42 @@ def main():
         .map_elements(process_row, return_dtype=pl.String)
         .alias("status_or_prediction")
     )
+
+    # ---------------------------------------------------------------------
+    # Freeze form columns (fa_home, fa_away, fd_home, fd_away) for matches
+    # that have already been marked ACTUAL. We keep a snapshot of the form
+    # values the first time a row becomes ACTUAL and reuse those values on
+    # subsequent runs. This does not affect the calculation of form for
+    # future matches – the fresh values are still used when we generate new
+    # predictions.
+    # ---------------------------------------------------------------------
+    try:
+        old_preds = pl.read_csv("data/predictions.csv")
+    except Exception:
+        old_preds = None
+
+    if old_preds is not None:
+        # Keep only the snapshot columns if they exist
+        snapshot_cols = [c for c in ["fa_home", "fa_away", "fd_home", "fd_away"] if c in old_preds.columns]
+        if snapshot_cols:
+            # Join old snapshot values on match_id
+            results = results.join(
+                old_preds.select(["match_id"] + snapshot_cols),
+                on="match_id",
+                how="left",
+                suffix="_old"
+            )
+            # Replace fresh form columns with the old ones for historic rows
+            for col in snapshot_cols:
+                results = results.with_columns(
+                    pl.when(pl.col("match_id") <= high_water_mark)
+                      .then(pl.col(f"{col}_old"))
+                      .otherwise(pl.col(col))
+                      .alias(col)
+                )
+            # Drop the temporary *_old columns
+            results = results.drop([f"{c}_old" for c in snapshot_cols])
+
     
     # Define desired column order: metadata, scores, then paired metrics
     ordered_columns = [
