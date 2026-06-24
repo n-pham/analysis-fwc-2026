@@ -25,6 +25,8 @@ This project predicts match results for the FIFA Soccer World Cup 2026 using his
 When an actual match result is available:
 1. **Update `data/matches.csv`:** Fill in the `score_home` and `score_away` columns for the specific `match_id`.
 2. **Run `predict.py`:** Use `uv run predict.py`. The script will automatically detect the actual scores, mark the match as "ACTUAL" in the output, and (in future versions) trigger the ELO update logic to refine predictions for remaining matches.
+
+   **Note:** All Python scripts in this project should be executed with `uv run <script>.py` to guarantee they run inside the project's virtual environment with the correct dependencies.
 3. **Verify Trends:** Ensure that the "tempo points" or updated team rankings reflect the latest performance trends.
 
 ## Output

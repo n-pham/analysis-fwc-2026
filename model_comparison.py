@@ -15,6 +15,8 @@ import math
 import numpy as np
 import polars as pl
 from pathlib import Path
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
@@ -351,8 +353,32 @@ def main():
         # l1 penalty requires liblinear solver; l2 can use lbfgs
         solver = "liblinear" if pen == "l1" else "lbfgs"
         try:
-            lr = LogisticRegression(max_iter=2000, C=C, penalty=pen, solver=solver, class_weight=w)
+            lr = LogisticRegression(
+                max_iter=2000,
+                C=C,
+                penalty=pen,
+                solver=solver,
+                class_weight=w,
+            )
+            # Fit using the same scaled data as the baseline LR
+            lr.fit(X_train_scaled, y_train)
+            pred = lr.predict(X_val_scaled)
+            acc = accuracy_score(y_val, pred)
+            # Track best configuration
+            if acc > best[3]:
+                best = (C, pen, w, acc)
+            print(f"LR C={C}, penalty={pen}, class_weight={w} => acc: {acc:.2%}")
+        except Exception as e:
+            # Some combos (e.g., l1 with lbfgs) are invalid
+            print(f"Skipped LR C={C}, penalty={pen}, class_weight={w}: {e}")
 
+    # Report best LR configuration after exploring all options
+    best_C, best_pen, best_w, best_acc = best
+    print("\nBest Logistic Regression configuration:")
+    print(f"  C = {best_C}")
+    print(f"  penalty = {best_pen}")
+    print(f"  class_weight = {best_w}")
+    print(f"  validation accuracy = {best_acc:.2%}\n")
 
 if __name__ == "__main__":
     main()
