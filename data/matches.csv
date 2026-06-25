@@ -47,27 +47,27 @@ match_id,date,team_home,team_away,venue,score_home,score_away,is_tactical
 46,2026-06-23,England,Ghana,Houston,0,0,0
 47,2026-06-23,Panama,Croatia,Miami,0,1,0
 48,2026-06-24,Colombia,Congo DR,Toronto,1,0,0
-49,2026-06-24,Switzerland,Canada,Vancouver,,,1
-50,2026-06-24,Bosnia and Herzegovina,Qatar,Halifax,,,0
-51,2026-06-24,Scotland,Brazil,Boston,,,0
-52,2026-06-24,Morocco,Haiti,Philadelphia,,,1
-53,2026-06-25,Czechia,Mexico,Mexico City,,,1
-54,2026-06-25,South Africa,Korea Republic,Monterrey,,,0
-55,2026-06-25,Curaçao,Côte d'Ivoire,Boston,,,0
+49,2026-06-24,Switzerland,Canada,Vancouver,2,1,1
+50,2026-06-24,Bosnia and Herzegovina,Qatar,Halifax,3,1,0
+51,2026-06-24,Scotland,Brazil,Boston,0,3,0
+52,2026-06-24,Morocco,Haiti,Philadelphia,4,2,1
+53,2026-06-25,Czechia,Mexico,Mexico City,0,3,1
+54,2026-06-25,South Africa,Korea Republic,Monterrey,1,0,0
+55,2026-06-25,Curaçao,Côte d'Ivoire,Boston,3,0,0
 56,2026-06-25,Ecuador,Germany,New York/New Jersey,,,0
 57,2026-06-25,Japan,Sweden,Dallas,,,0
 58,2026-06-25,Tunisia,Netherlands,Houston,,,0
 59,2026-06-26,Türkiye,USA,Los Angeles,,,1
 60,2026-06-26,Paraguay,Australia,San Francisco Bay Area,,,0
-61,2026-06-26,Norway,France,New York/New Jersey,,,0
-62,2026-26-06,Senegal,Iraq,Philadelphia,,,0
+61,2026-06-26,Norway,France,New York/New Jersey,,,1
+62,2026-26-06,Senegal,Iraq,Philadelphia,,,1
 63,2026-27-06,Egypt,IR Iran,Dallas,,,0
 64,2026-27-06,New Zealand,Belgium,Kansas City,,,0
 65,2026-27-06,Cabo Verde,Saudi Arabia,Atlanta,,,0
 66,2026-27-06,Uruguay,Spain,Miami,,,0
-67,2026-27-06,Colombia,Portugal,Dallas,,,0
-68,2026-27-06,Congo DR,Uzbekistan,Houston,,,0
+67,2026-27-06,Colombia,Portugal,Dallas,,,1
+68,2026-27-06,Congo DR,Uzbekistan,Houston,,,1
 69,2026-27-06,Panama,England,Miami,,,0
 70,2026-27-06,Croatia,Ghana,Atlanta,,,0
 71,2026-28-06,Algeria,Austria,San Francisco Bay Area,,,0
-72,2026-28-06,Jordan,Argentina,Los Angeles,,,0
+72,2026-28-06,Jordan,Argentina,Los Angeles,,,1
