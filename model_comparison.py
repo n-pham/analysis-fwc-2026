@@ -238,10 +238,32 @@ def main():
     actual_mask = (pl.col("score_home").is_not_null()) & (pl.col("score_away").is_not_null())
     eval_df = feature_df.filter(actual_mask)
 
+    # Identify first non-tactical match for each team (warm-up period)
+    non_tactical_df = eval_df.filter(pl.col("is_tactical") != 1)
+    home = non_tactical_df.select([
+        pl.col("match_id"),
+        pl.col("date"),
+        pl.col("team_home").alias("team"),
+    ])
+    away = non_tactical_df.select([
+        pl.col("match_id"),
+        pl.col("date"),
+        pl.col("team_away").alias("team"),
+    ])
+    long = pl.concat([home, away])
+    long = long.sort(["team", "date", "match_id"], descending=False)
+    first_per_team = long.group_by("team").agg(pl.col("match_id").first().alias("first_match_id"))
+    first_match_ids = set(first_per_team["first_match_id"].to_list())
+
     # Encode target
     y = encode_target(eval_df).to_numpy()
     # Drop rows where target is None (should not happen after mask)
     valid_idx = ~np.isnan(y)
+    
+    # Store match metadata to align with split
+    match_ids = eval_df["match_id"].to_numpy()[valid_idx]
+    is_tactical = eval_df["is_tactical"].to_numpy()[valid_idx]
+
     X = eval_df.select([
         "ba_home", "ba_away", "bd_home", "bd_away",
         "fa_home", "fa_away", "fd_home", "fd_away",
@@ -252,9 +274,21 @@ def main():
     y = y[valid_idx].astype(int)
 
     # Simple train/val split (80/20)
-    X_train, X_val, y_train, y_val = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
+    indices = np.arange(len(y))
+    train_idx, val_idx = train_test_split(
+        indices, test_size=0.2, random_state=42, stratify=y
     )
+
+    X_train, X_val = X[train_idx], X[val_idx]
+    y_train, y_val = y[train_idx], y[val_idx]
+    val_match_ids = match_ids[val_idx]
+    val_is_tactical = is_tactical[val_idx]
+
+    # Validation evaluation mask (excludes warmups and tactical matches)
+    val_eval_mask = np.array([
+        (m_id not in first_match_ids) and (is_tac != 1)
+        for m_id, is_tac in zip(val_match_ids, val_is_tactical)
+    ])
 
     # -------------------- Logistic Regression (tuned) --------------------
     # Baseline tuned LR (already above) – we keep it as reference
@@ -265,7 +299,6 @@ def main():
     log_reg = LogisticRegression(
         max_iter=1000,
         C=2.0,                # try a larger C for less regularisation
-        penalty='l2',
         solver='lbfgs',
         class_weight='balanced',
     )
@@ -273,6 +306,9 @@ def main():
     pred_log = log_reg.predict(X_val_scaled)
     acc_log = accuracy_score(y_val, pred_log)
     print(f"Logistic Regression (tuned) validation accuracy: {acc_log:.2%}")
+    if np.any(val_eval_mask):
+        acc_log_filtered = accuracy_score(y_val[val_eval_mask], pred_log[val_eval_mask])
+        print(f"  Warm-up-excluded validation accuracy: {acc_log_filtered:.2%}")
 
     # -------------------- Random Forest --------------------
     from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
@@ -287,6 +323,9 @@ def main():
     pred_rf = rf.predict(X_val)
     acc_rf = accuracy_score(y_val, pred_rf)
     print(f"Random Forest validation accuracy: {acc_rf:.2%}")
+    if np.any(val_eval_mask):
+        acc_rf_filtered = accuracy_score(y_val[val_eval_mask], pred_rf[val_eval_mask])
+        print(f"  Warm-up-excluded validation accuracy: {acc_rf_filtered:.2%}")
 
     # -------------------- Gradient Boosting --------------------
     gb = GradientBoostingClassifier(
@@ -299,6 +338,9 @@ def main():
     pred_gb = gb.predict(X_val)
     acc_gb = accuracy_score(y_val, pred_gb)
     print(f"Gradient Boosting validation accuracy: {acc_gb:.2%}")
+    if np.any(val_eval_mask):
+        acc_gb_filtered = accuracy_score(y_val[val_eval_mask], pred_gb[val_eval_mask])
+        print(f"  Warm-up-excluded validation accuracy: {acc_gb_filtered:.2%}")
 
     # -------------------- XGBoost shallow model with early stopping --------------------
     if XGB_AVAILABLE:
@@ -322,14 +364,16 @@ def main():
         pred_xgb = xgb_model.predict(X_val)
         acc_xgb = accuracy_score(y_val, pred_xgb)
         print(f"XGBoost (max_depth=3, early stop) validation accuracy: {acc_xgb:.2%}")
+        if np.any(val_eval_mask):
+            acc_xgb_filtered = accuracy_score(y_val[val_eval_mask], pred_xgb[val_eval_mask])
+            print(f"  Warm-up-excluded validation accuracy: {acc_xgb_filtered:.2%}")
     else:
         print("XGBoost not installed – skipping XGBoost comparison.")
 
-    # -------------------- Warm‑up‑excluded accuracy for each model --------------------
-    # Re‑use the helper from metrics.py (it expects predictions CSV). We'll compute it manually here.
+    # -------------------- Warm-up-excluded accuracy for each model --------------------
     from metrics import warmup_excluded_accuracy
     overall_warmup_acc = warmup_excluded_accuracy()
-    print(f"Warm‑up‑excluded overall pipeline accuracy (current predict.py): {overall_warmup_acc:.2%}")
+    print(f"Warm-up-excluded overall pipeline accuracy (current predict.py): {overall_warmup_acc:.2%}")
 
     # -------------------------------------------------------
     # Additional LR experiments: varying C, L1 penalty, custom class weights
@@ -337,9 +381,6 @@ def main():
     from sklearn.utils import compute_class_weight
     import itertools
     Cs = [0.5, 1.0, 2.0, 5.0]
-    penalties = ["l2", "l1"]
-    # Custom weight dict gives extra weight to the minority class (draw = 0)
-    # We'll compute the balanced weights and then boost class 0 by 2x.
     classes = np.unique(y_train)
     balanced_weights = compute_class_weight(class_weight='balanced', classes=classes, y=y_train)
     balanced_dict = dict(zip(classes, balanced_weights))
@@ -348,15 +389,13 @@ def main():
         custom_dict[0] *= 2.0
     weight_options = ["balanced", custom_dict]
 
-    best = (0, None, None, 0.0)
-    for C, pen, w in itertools.product(Cs, penalties, weight_options):
-        # l1 penalty requires liblinear solver; l2 can use lbfgs
-        solver = "liblinear" if pen == "l1" else "lbfgs"
+    best = (None, None, 0.0)
+    solver = "lbfgs"
+    for C, w in itertools.product(Cs, weight_options):
         try:
             lr = LogisticRegression(
                 max_iter=2000,
                 C=C,
-                penalty=pen,
                 solver=solver,
                 class_weight=w,
             )
@@ -365,18 +404,20 @@ def main():
             pred = lr.predict(X_val_scaled)
             acc = accuracy_score(y_val, pred)
             # Track best configuration
-            if acc > best[3]:
-                best = (C, pen, w, acc)
-            print(f"LR C={C}, penalty={pen}, class_weight={w} => acc: {acc:.2%}")
+            if acc > best[2]:
+                best = (C, w, acc)
+            if np.any(val_eval_mask):
+                acc_fil = accuracy_score(y_val[val_eval_mask], pred[val_eval_mask])
+                print(f"LR C={C}, class_weight={w} => acc: {acc:.2%} (Warm-up-excluded: {acc_fil:.2%})")
+            else:
+                print(f"LR C={C}, class_weight={w} => acc: {acc:.2%}")
         except Exception as e:
-            # Some combos (e.g., l1 with lbfgs) are invalid
-            print(f"Skipped LR C={C}, penalty={pen}, class_weight={w}: {e}")
+            print(f"Skipped LR C={C}, class_weight={w}: {e}")
 
     # Report best LR configuration after exploring all options
-    best_C, best_pen, best_w, best_acc = best
+    best_C, best_w, best_acc = best
     print("\nBest Logistic Regression configuration:")
     print(f"  C = {best_C}")
-    print(f"  penalty = {best_pen}")
     print(f"  class_weight = {best_w}")
     print(f"  validation accuracy = {best_acc:.2%}\n")
 

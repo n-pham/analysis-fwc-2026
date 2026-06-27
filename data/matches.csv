@@ -54,17 +54,17 @@ match_id,date,team_home,team_away,venue,score_home,score_away,is_tactical
 53,2026-06-25,Czechia,Mexico,Mexico City,0,3,1
 54,2026-06-25,South Africa,Korea Republic,Monterrey,1,0,0
 55,2026-06-25,Curaçao,Côte d'Ivoire,Boston,3,0,0
-56,2026-06-25,Ecuador,Germany,New York/New Jersey,,,0
-57,2026-06-25,Japan,Sweden,Dallas,,,0
-58,2026-06-25,Tunisia,Netherlands,Houston,,,0
-59,2026-06-26,Türkiye,USA,Los Angeles,,,1
-60,2026-06-26,Paraguay,Australia,San Francisco Bay Area,,,0
-61,2026-06-26,Norway,France,New York/New Jersey,,,1
-62,2026-26-06,Senegal,Iraq,Philadelphia,,,1
-63,2026-27-06,Egypt,IR Iran,Dallas,,,0
-64,2026-27-06,New Zealand,Belgium,Kansas City,,,0
-65,2026-27-06,Cabo Verde,Saudi Arabia,Atlanta,,,0
-66,2026-27-06,Uruguay,Spain,Miami,,,0
+56,2026-06-25,Ecuador,Germany,New York/New Jersey,2,1,1
+57,2026-06-25,Japan,Sweden,Dallas,1,1,0
+58,2026-06-25,Tunisia,Netherlands,Houston,1,3,0
+59,2026-06-26,Türkiye,USA,Los Angeles,3,2,1
+60,2026-06-26,Paraguay,Australia,San Francisco Bay Area,0,0,0
+61,2026-06-26,Norway,France,New York/New Jersey,1,4,1
+62,2026-26-06,Senegal,Iraq,Philadelphia,5,0,1
+63,2026-27-06,Egypt,IR Iran,Dallas,1,1,0
+64,2026-27-06,New Zealand,Belgium,Kansas City,1,5,0
+65,2026-27-06,Cabo Verde,Saudi Arabia,Atlanta,0,0,0
+66,2026-27-06,Uruguay,Spain,Miami,0,1,0
 67,2026-27-06,Colombia,Portugal,Dallas,,,1
 68,2026-27-06,Congo DR,Uzbekistan,Houston,,,1
 69,2026-27-06,Panama,England,Miami,,,0

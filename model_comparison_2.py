@@ -152,13 +152,17 @@ def build_feature_df(matches_df: pl.DataFrame, teams_df: pl.DataFrame, form_scor
     if "match_stage" not in matches_df.columns:
         matches_df = matches_df.with_columns(pl.lit("GROUP").alias("match_stage"))
 
+    # Ensure we have an is_penalty_shootout column – if missing we treat it as 0.
+    if "is_penalty_shootout" not in matches_df.columns:
+        matches_df = matches_df.with_columns(pl.lit(0).alias("is_penalty_shootout"))
+
     # Replace team names mapping (empty for now)
     mapping = {}
     matches = matches_df.with_columns([
         pl.col("team_home").replace(mapping).alias("team_home"),
         pl.col("team_away").replace(mapping).alias("team_away"),
         # Parse dates robustly – use strict=False so malformed dates become null
-pl.col("date").str.strptime(pl.Date, "%Y-%m-%d", strict=False).alias("date_dt"),
+        pl.col("date").str.strptime(pl.Date, "%Y-%m-%d", strict=False).alias("date_dt"),
     ])
 
     # Join home team data
@@ -208,14 +212,14 @@ pl.col("date").str.strptime(pl.Date, "%Y-%m-%d", strict=False).alias("date_dt"),
     ])
 
     # -------------------------------------------------------------------
-    # Rest‑day features (days since previous match for each side)
+    # Rest-day features (days since previous match for each side)
     # -------------------------------------------------------------------
     # Sort by date for each team, compute difference in days, fill first match with large number.
     matches = matches.sort(["team_home", "date_dt"]).with_columns([
-        pl.col("date_dt").diff().over("team_home").fill_null(999).alias("rest_home")
+        pl.col("date_dt").diff().dt.total_days().over("team_home").fill_null(999).alias("rest_home")
     ])
     matches = matches.sort(["team_away", "date_dt"]).with_columns([
-        pl.col("date_dt").diff().over("team_away").fill_null(999).alias("rest_away")
+        pl.col("date_dt").diff().dt.total_days().over("team_away").fill_null(999).alias("rest_away")
     ])
 
     return matches
@@ -271,11 +275,32 @@ def main():
     actual_mask = (pl.col("score_home").is_not_null()) & (pl.col("score_away").is_not_null())
     eval_df = feature_df.filter(actual_mask)
 
+    # Identify first non-tactical match for each team (warm-up period)
+    non_tactical_df = eval_df.filter(pl.col("is_tactical") != 1)
+    home = non_tactical_df.select([
+        pl.col("match_id"),
+        pl.col("date"),
+        pl.col("team_home").alias("team"),
+    ])
+    away = non_tactical_df.select([
+        pl.col("match_id"),
+        pl.col("date"),
+        pl.col("team_away").alias("team"),
+    ])
+    long = pl.concat([home, away])
+    long = long.sort(["team", "date", "match_id"], descending=False)
+    first_per_team = long.group_by("team").agg(pl.col("match_id").first().alias("first_match_id"))
+    first_match_ids = set(first_per_team["first_match_id"].to_list())
+
     # Encode target (4‑class)
     y_series = encode_target(eval_df)
     y_np = y_series.to_numpy()
     valid_idx = ~np.isnan(y_np)
     y_np = y_np[valid_idx].astype(int)
+
+    # Store match metadata to align with split
+    match_ids = eval_df["match_id"].to_numpy()[valid_idx]
+    is_tactical = eval_df["is_tactical"].to_numpy()[valid_idx]
 
     # Feature columns for the models
     feature_cols = [
@@ -284,7 +309,7 @@ def main():
         "apps_home", "apps_away",
         "injuries_home", "injuries_away",
         "rank_home", "rank_away",
-        "rank_home" - "rank_away",  # rank diff (will be computed below)
+        "rank_diff",  # rank diff (will be computed below)
         "is_knockout", "stage_weight", "rest_home", "rest_away",
         "is_penalty_shootout",
     ]
@@ -304,9 +329,21 @@ def main():
     ]).to_numpy()[valid_idx]
 
     # Train/validation split (stratified by the 4‑class label)
-    X_train, X_val, y_train, y_val = train_test_split(
-        X, y_np, test_size=0.2, random_state=42, stratify=y_np
+    indices = np.arange(len(y_np))
+    train_idx, val_idx = train_test_split(
+        indices, test_size=0.2, random_state=42, stratify=y_np
     )
+
+    X_train, X_val = X[train_idx], X[val_idx]
+    y_train, y_val = y_np[train_idx], y_np[val_idx]
+    val_match_ids = match_ids[val_idx]
+    val_is_tactical = is_tactical[val_idx]
+
+    # Validation evaluation mask (excludes warmups and tactical matches)
+    val_eval_mask = np.array([
+        (m_id not in first_match_ids) and (is_tac != 1)
+        for m_id, is_tac in zip(val_match_ids, val_is_tactical)
+    ])
 
     # -------------------- Logistic Regression baseline (scaled) --------------------
     from sklearn.preprocessing import StandardScaler
@@ -318,6 +355,9 @@ def main():
     pred_log = log_reg.predict(X_val_scaled)
     acc_log = accuracy_score(y_val, pred_log)
     print(f"Logistic Regression (scaled, 4‑class) validation accuracy: {acc_log:.2%}")
+    if np.any(val_eval_mask):
+        acc_log_filtered = accuracy_score(y_val[val_eval_mask], pred_log[val_eval_mask])
+        print(f"  Warm-up-excluded validation accuracy: {acc_log_filtered:.2%}")
 
     # -------------------- XGBoost shallow model with early stopping --------------------
     if XGB_AVAILABLE:
@@ -341,13 +381,16 @@ def main():
         pred_xgb = xgb_model.predict(X_val)
         acc_xgb = accuracy_score(y_val, pred_xgb)
         print(f"XGBoost (max_depth=3, early stop, 4‑class) validation accuracy: {acc_xgb:.2%}")
+        if np.any(val_eval_mask):
+            acc_xgb_filtered = accuracy_score(y_val[val_eval_mask], pred_xgb[val_eval_mask])
+            print(f"  Warm-up-excluded validation accuracy: {acc_xgb_filtered:.2%}")
     else:
         print("XGBoost not installed – skipping XGBoost comparison.")
 
-    # Warm‑up‑excluded overall pipeline accuracy (unchanged helper)
+    # Warm-up-excluded overall pipeline accuracy (unchanged helper)
     from metrics import warmup_excluded_accuracy
     overall_warmup_acc = warmup_excluded_accuracy()
-    print(f"Warm‑up‑excluded overall pipeline accuracy (current predict.py): {overall_warmup_acc:.2%}")
+    print(f"Warm-up-excluded overall pipeline accuracy (current predict.py): {overall_warmup_acc:.2%}")
 
 if __name__ == "__main__":
     main()
