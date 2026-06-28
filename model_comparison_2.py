@@ -202,6 +202,7 @@ def build_feature_df(matches_df: pl.DataFrame, teams_df: pl.DataFrame, form_scor
         (pl.col("match_stage") != "GROUP").alias("is_knockout"),
         # Simple numeric weight that grows later in the tournament
         pl.when(pl.col("match_stage") == "GROUP").then(1.0)
+          .when(pl.col("match_stage") == "R32").then(1.3)
           .when(pl.col("match_stage") == "R16").then(1.5)
           .when(pl.col("match_stage") == "QF").then(1.7)
           .when(pl.col("match_stage") == "SF").then(1.9)
