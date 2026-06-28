@@ -65,9 +65,9 @@ match_id,date,team_home,team_away,venue,score_home,score_away,is_tactical
 64,2026-27-06,New Zealand,Belgium,Kansas City,1,5,0
 65,2026-27-06,Cabo Verde,Saudi Arabia,Atlanta,0,0,0
 66,2026-27-06,Uruguay,Spain,Miami,0,1,0
-67,2026-27-06,Colombia,Portugal,Dallas,,,1
-68,2026-27-06,Congo DR,Uzbekistan,Houston,,,1
-69,2026-27-06,Panama,England,Miami,,,0
-70,2026-27-06,Croatia,Ghana,Atlanta,,,0
-71,2026-28-06,Algeria,Austria,San Francisco Bay Area,,,0
-72,2026-28-06,Jordan,Argentina,Los Angeles,,,1
+67,2026-27-06,Colombia,Portugal,Dallas,0,0,1
+68,2026-27-06,Congo DR,Uzbekistan,Houston,3,1,1
+69,2026-27-06,Panama,England,Miami,0,2,0
+70,2026-27-06,Croatia,Ghana,Atlanta,2,1,0
+71,2026-28-06,Algeria,Austria,San Francisco Bay Area,3,3,0
+72,2026-28-06,Jordan,Argentina,Los Angeles,1,3,1
