@@ -261,7 +261,16 @@ def predict_logic(struct_row):
         else: pred = f"Draw/Tight Match ({diff:+.1f})"
 
     if s_h is not None and s_a is not None:
-        if s_h > s_a: actual = t_h
+        if row["is_penalty_shootout"] == 1:
+            p_h = row["penalties_home"]
+            p_a = row["penalties_away"]
+            if p_h > p_a:
+                actual = t_h
+            elif p_a > p_h:
+                actual = t_a
+            else:
+                actual = "Draw"
+        elif s_h > s_a: actual = t_h
         elif s_a > s_h: actual = t_a
         else: actual = "Draw"
         return f"ACTUAL: {actual} (Model: {pred})"
@@ -307,7 +316,16 @@ def main():
             s_h, s_a = row["score_home"], row["score_away"]
             if s_h is not None and s_a is not None:
                 t_h, t_a = row["team_home"], row["team_away"]
-                if s_h > s_a: actual = t_h
+                if row["is_penalty_shootout"] == 1:
+                    p_h = row["penalties_home"]
+                    p_a = row["penalties_away"]
+                    if p_h > p_a:
+                        actual = t_h
+                    elif p_a > p_h:
+                        actual = t_a
+                    else:
+                        actual = "Draw"
+                elif s_h > s_a: actual = t_h
                 elif s_a > s_h: actual = t_a
                 else: actual = "Draw"
                 
