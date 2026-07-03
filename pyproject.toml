@@ -8,5 +8,6 @@ dependencies = [
     "polars>=1.41.2",
     "pyarrow>=24.0.0",
     "scikit-learn>=1.9.0",
+    "tabfm[pytorch]>=1.0.0",
     "xgboost>=3.2.0",
 ]

@@ -40,6 +40,13 @@ try:
 except Exception:  # pragma: no cover
     XGB_AVAILABLE = False
 
+try:
+    from tabfm import TabFMClassifier
+    TABFM_AVAILABLE = True
+except Exception:
+    TABFM_AVAILABLE = False
+TABFM_AVAILABLE = False
+
 # ---------------------------------------------------------------------------
 # Helper utilities (mirroring parts of predict.py and the original comparison)
 # ---------------------------------------------------------------------------
@@ -359,6 +366,19 @@ def main():
     if np.any(val_eval_mask):
         acc_log_filtered = accuracy_score(y_val[val_eval_mask], pred_log[val_eval_mask])
         print(f"  Warm-up-excluded validation accuracy: {acc_log_filtered:.2%}")
+
+    # -------------------- TabFM classifier --------------------
+    if TABFM_AVAILABLE:
+        from tabfm import tabfm_v1_0_0_pytorch
+        model = tabfm_v1_0_0_pytorch.load()
+        clf_tabfm = TabFMClassifier(model=model, n_estimators=10)
+        clf_tabfm.fit(X_train, y_train)
+        pred_tabfm = clf_tabfm.predict(X_val)
+        acc_tabfm = accuracy_score(y_val, pred_tabfm)
+        print(f"TabFM validation accuracy: {acc_tabfm:.2%}")
+        if np.any(val_eval_mask):
+            acc_tabfm_filtered = accuracy_score(y_val[val_eval_mask], pred_tabfm[val_eval_mask])
+            print(f"  Warm-up-excluded validation accuracy: {acc_tabfm_filtered:.2%}")
 
     # -------------------- XGBoost shallow model with early stopping --------------------
     if XGB_AVAILABLE:
