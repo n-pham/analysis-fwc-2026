@@ -183,27 +183,27 @@ def extract_model_pred(pred_str):
 
 def predict_logic(struct_row):
 
-    s_h = struct_row["score_home"]
-    s_a = struct_row["score_away"]
-    t_h = struct_row["team_home"]
-    t_a = struct_row["team_away"]
+    s_h = struct_row.get("score_home")
+    s_a = struct_row.get("score_away")
+    t_h = struct_row.get("team_home")
+    t_a = struct_row.get("team_away")
 
     # Base Metrics
-    ba_h, bd_h = struct_row["ba_home"], struct_row["bd_home"]
-    ba_a, bd_a = struct_row["ba_away"], struct_row["bd_away"]
+    ba_h, bd_h = struct_row.get("ba_home"), struct_row.get("bd_home")
+    ba_a, bd_a = struct_row.get("ba_away"), struct_row.get("bd_away")
     
     # Form Metrics
-    fa_h, fd_h = struct_row["fa_home"] or 0, struct_row["fd_home"] or 0
-    fa_a, fd_a = struct_row["fa_away"] or 0, struct_row["fd_away"] or 0
+    fa_h, fd_h = struct_row.get("fa_home") or 0, struct_row.get("fd_home") or 0
+    fa_a, fd_a = struct_row.get("fa_away") or 0, struct_row.get("fd_away") or 0
 
     # World Rankings (for Bus Factor)
-    rank_h, rank_a = struct_row["rank_home"], struct_row["rank_away"]
+    rank_h, rank_a = struct_row.get("rank_home"), struct_row.get("rank_away")
 
     # Adjust form to be "prior" if the match has a result, 
     # so the Model prediction in brackets is based on pre-match data.
     if s_h is not None and s_a is not None:
-        h_weight = max(0.1, (101 - rank_a) / 50.0)
-        a_weight = max(0.1, (101 - rank_h) / 50.0)
+        h_weight = max(0.1, (101 - (rank_a or 50)) / 50.0)
+        a_weight = max(0.1, (101 - (rank_h or 50)) / 50.0)
 
         fa_h -= s_h * 5.0 * h_weight
         fd_h -= (10.0 * h_weight if s_a == 0 else 0) - (s_a * 3.0 * (1.0 / h_weight))
@@ -211,10 +211,10 @@ def predict_logic(struct_row):
         fd_a -= (10.0 * a_weight if s_h == 0 else 0) - (s_h * 3.0 * (1.0 / a_weight))
     
     # Pedigree (Appearances)
-    apps_h, apps_a = struct_row["apps_home"] or 0, struct_row["apps_away"] or 0
+    apps_h, apps_a = struct_row.get("apps_home") or 0, struct_row.get("apps_away") or 0
     
     # Injuries
-    inj_h, inj_a = struct_row["injuries_home"], struct_row["injuries_away"]
+    inj_h, inj_a = struct_row.get("injuries_home"), struct_row.get("injuries_away")
     
     if ba_h is None or ba_a is None:
         pred = f"Pending Draw ({t_h} vs {t_a})"
@@ -222,11 +222,11 @@ def predict_logic(struct_row):
         # Calculate Effective Attack and Defense
         # Formula: Base + Form + Pedigree - (Injuries * 10)
         # Experience (Pedigree) is weighted 1.2x for attack and 0.5x for defense.
-        h_atk = ba_h + fa_h + (apps_h * 1.2) - (inj_h * 10)
-        h_def = bd_h + fd_h + (apps_h * 0.5) - (inj_h * 10)
+        h_atk = ba_h + fa_h + (apps_h * 1.2) - ((inj_h or 0) * 10)
+        h_def = bd_h + fd_h + (apps_h * 0.5) - ((inj_h or 0) * 10)
         
-        a_atk = ba_a + fa_a + (apps_a * 1.2) - (inj_a * 10)
-        a_def = bd_a + fd_a + (apps_a * 0.5) - (inj_a * 10)
+        a_atk = ba_a + fa_a + (apps_a * 1.2) - ((inj_a or 0) * 10)
+        a_def = bd_a + fd_a + (apps_a * 0.5) - ((inj_a or 0) * 10)
 
         # "Parking the Bus" Factor (Defensive Resilience)
         # If one team is ranked much lower than the other, they get a defense boost.
@@ -261,9 +261,10 @@ def predict_logic(struct_row):
         else: pred = f"Draw/Tight Match ({diff:+.1f})"
 
     if s_h is not None and s_a is not None:
-        if row["is_penalty_shootout"] == 1:
-            p_h = row["penalties_home"]
-            p_a = row["penalties_away"]
+        is_penalty = int(struct_row.get("is_penalty_shootout", 0) or 0)
+        if is_penalty == 1:
+            p_h = int(struct_row.get("penalties_home", 0) or 0)
+            p_a = int(struct_row.get("penalties_away", 0) or 0)
             if p_h > p_a:
                 actual = t_h
             elif p_a > p_h:
@@ -316,9 +317,11 @@ def main():
             s_h, s_a = row["score_home"], row["score_away"]
             if s_h is not None and s_a is not None:
                 t_h, t_a = row["team_home"], row["team_away"]
-                if row["is_penalty_shootout"] == 1:
-                    p_h = row["penalties_home"]
-                    p_a = row["penalties_away"]
+                # Convert to Python int/float/etc as needed
+                is_penalty = int(row["is_penalty_shootout"]) if row["is_penalty_shootout"] is not None else 0
+                if is_penalty == 1:
+                    p_h = int(row["penalties_home"]) if row["penalties_home"] is not None else 0
+                    p_a = int(row["penalties_away"]) if row["penalties_away"] is not None else 0
                     if p_h > p_a:
                         actual = t_h
                     elif p_a > p_h:
