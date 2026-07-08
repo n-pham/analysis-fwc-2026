@@ -93,5 +93,9 @@ match_id,date,team_home,team_away,venue,score_home,score_away,is_tactical,match_
 92,2026-06-07,Mexico,England,,2,3,0,R16,0,0,0
 93,2026-07-07,Portugal,Spain,,0,1,0,R16,0,0,0
 94,2026-07-07,USA,Belgium,,1,4,0,R16,0,0,0
-95,2026-07-07,Argentina,Egypt,,,,0,R16,0,0,0
-96,2026-07-07,Switzerland,Colombia,,,,0,R16,0,0,0
+95,2026-07-07,Argentina,Egypt,,3,2,0,R16,0,0,0
+96,2026-07-07,Switzerland,Colombia,,0,0,0,R16,1,4,3
+97,2026-10-07,France,Morocco,,,,,QF,0,0,0
+98,2026-11-07,Spain,Belgium,,,,,QF,0,0,0
+99,2026-12-07,Norway,England,,,,,QF,0,0,0
+100,2026-08-07,Argentina,Switzerland,,,,,QF,0,0,0
