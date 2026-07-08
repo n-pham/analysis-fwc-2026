@@ -30,6 +30,7 @@ import numpy as np
 import polars as pl
 from pathlib import Path
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
@@ -41,11 +42,16 @@ except Exception:  # pragma: no cover
     XGB_AVAILABLE = False
 
 try:
-    from tabfm import TabFMClassifier
-    TABFM_AVAILABLE = True
+    # from tabfm import TabFMClassifier
+    TABFM_AVAILABLE = False
 except Exception:
     TABFM_AVAILABLE = False
-TABFM_AVAILABLE = False
+
+try:
+    from tabicl import TabICLClassifier, TabICLRegressor
+    TABICL_AVAILABLE = True
+except Exception:
+    TABICL_AVAILABLE = False
 
 # ---------------------------------------------------------------------------
 # Helper utilities (mirroring parts of predict.py and the original comparison)
@@ -367,6 +373,37 @@ def main():
         acc_log_filtered = accuracy_score(y_val[val_eval_mask], pred_log[val_eval_mask])
         print(f"  Warm-up-excluded validation accuracy: {acc_log_filtered:.2%}")
 
+    # -------------------- Random Forest --------------------
+    rf = RandomForestClassifier(
+        n_estimators=400,
+        max_depth=None,
+        class_weight='balanced',
+        random_state=42,
+        n_jobs=-1,
+    )
+    rf.fit(X_train, y_train)
+    pred_rf = rf.predict(X_val)
+    acc_rf = accuracy_score(y_val, pred_rf)
+    print(f"Random Forest validation accuracy: {acc_rf:.2%}")
+    if np.any(val_eval_mask):
+        acc_rf_filtered = accuracy_score(y_val[val_eval_mask], pred_rf[val_eval_mask])
+        print(f"  Warm-up-excluded validation accuracy: {acc_rf_filtered:.2%}")
+
+    # -------------------- Gradient Boosting --------------------
+    gb = GradientBoostingClassifier(
+        n_estimators=250,
+        learning_rate=0.05,
+        max_depth=3,
+        random_state=42,
+    )
+    gb.fit(X_train, y_train)
+    pred_gb = gb.predict(X_val)
+    acc_gb = accuracy_score(y_val, pred_gb)
+    print(f"Gradient Boosting validation accuracy: {acc_gb:.2%}")
+    if np.any(val_eval_mask):
+        acc_gb_filtered = accuracy_score(y_val[val_eval_mask], pred_gb[val_eval_mask])
+        print(f"  Warm-up-excluded validation accuracy: {acc_gb_filtered:.2%}")
+
     # -------------------- TabFM classifier --------------------
     if TABFM_AVAILABLE:
         from tabfm import tabfm_v1_0_0_pytorch
@@ -379,6 +416,17 @@ def main():
         if np.any(val_eval_mask):
             acc_tabfm_filtered = accuracy_score(y_val[val_eval_mask], pred_tabfm[val_eval_mask])
             print(f"  Warm-up-excluded validation accuracy: {acc_tabfm_filtered:.2%}")
+
+    # -------------------- TabICL classifier --------------------
+    if TABICL_AVAILABLE:
+        clf_icl = TabICLClassifier()
+        clf_icl.fit(X_train, y_train)
+        pred_icl = clf_icl.predict(X_val)
+        acc_icl = accuracy_score(y_val, pred_icl)
+        print(f"TabICL validation accuracy: {acc_icl:.2%}")
+        if np.any(val_eval_mask):
+            acc_icl_filtered = accuracy_score(y_val[val_eval_mask], pred_icl[val_eval_mask])
+            print(f"  Warm-up-excluded validation accuracy: {acc_icl_filtered:.2%}")
 
     # -------------------- XGBoost shallow model with early stopping --------------------
     if XGB_AVAILABLE:
