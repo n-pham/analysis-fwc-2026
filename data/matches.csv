@@ -99,5 +99,7 @@ match_id,date,team_home,team_away,venue,score_home,score_away,is_tactical,match_
 98,2026-11-07,Spain,Belgium,,2,1,0,QF,0,0,0
 99,2026-12-07,Norway,England,,1,2,0,QF,0,0,0
 100,2026-08-07,Argentina,Switzerland,,3,1,0,QF,0,0,0
-101,2026-15-07,France,Spain,,,,0,SF,0,0,0
-102,2026-16-07,England,Argentina,,,,0,SF,0,0,0
+101,2026-15-07,France,Spain,,0,2,0,SF,0,0,0
+103,2026-16-07,England,Argentina,,1,2,0,SF,0,0,0
+104,2026-16-07,France,England,,,,0,BF,0,0,0
+105,2026-16-07,Spain,Argentina,,,,0,F,0,0,0
