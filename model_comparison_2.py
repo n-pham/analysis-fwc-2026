@@ -53,6 +53,12 @@ try:
 except Exception:
     TABICL_AVAILABLE = False
 
+try:
+    from typesafe_sdk import Choice, TypeSafeClient
+    TYPESAFE_AVAILABLE = True
+except Exception:
+    TYPESAFE_AVAILABLE = False
+
 # ---------------------------------------------------------------------------
 # Helper utilities (mirroring parts of predict.py and the original comparison)
 # ---------------------------------------------------------------------------
@@ -427,6 +433,98 @@ def main():
         if np.any(val_eval_mask):
             acc_icl_filtered = accuracy_score(y_val[val_eval_mask], pred_icl[val_eval_mask])
             print(f"  Warm-up-excluded validation accuracy: {acc_icl_filtered:.2%}")
+
+    # -------------------- TypeSafe Classifier --------------------
+    if TYPESAFE_AVAILABLE:
+        try:
+            client = TypeSafeClient()
+            # Build a text representation of the training data for TypeSafe
+            # We'll use a k-NN style approach: for each validation sample, find similar training samples
+            # and ask TypeSafe to classify based on those examples
+            
+            # Prepare training examples as text
+            train_examples = []
+            for i in range(len(X_train)):
+                feat_dict = dict(zip([
+                    "ba_home", "ba_away", "bd_home", "bd_away",
+                    "fa_home", "fa_away", "fd_home", "fd_away",
+                    "apps_home", "apps_away",
+                    "injuries_home", "injuries_away",
+                    "rank_diff",
+                    "is_knockout", "stage_weight", "rest_home", "rest_away",
+                    "is_penalty_shootout"
+                ], X_train[i]))
+                
+                # Create a concise text description
+                outcome_map = {0: "Draw", 1: "Home win", 2: "Away win", 3: "Penalty shootout win"}
+                outcome = outcome_map[y_train[i]]
+                
+                example = (
+                    f"Match: Home rank diff {feat_dict['rank_diff']:+.0f}, "
+                    f"Home form (att/def): {feat_dict['fa_home']:.1f}/{feat_dict['fd_home']:.1f}, "
+                    f"Away form (att/def): {feat_dict['fa_away']:.1f}/{feat_dict['fd_away']:.1f}, "
+                    f"Injuries H/A: {feat_dict['injuries_home']}/{feat_dict['injuries_away']}, "
+                    f"Knockout: {bool(feat_dict['is_knockout'])}, Stage weight: {feat_dict['stage_weight']:.1f}, "
+                    f"Rest H/A: {feat_dict['rest_home']:.0f}/{feat_dict['rest_away']:.0f} -> {outcome}"
+                )
+                train_examples.append(example)
+            
+            # Limit examples to avoid token limits (use first 50)
+            example_text = "\n".join(train_examples[:50])
+            
+            # Now predict for each validation sample
+            pred_typesafe = []
+            for i in range(len(X_val)):
+                feat_dict = dict(zip([
+                    "ba_home", "ba_away", "bd_home", "bd_away",
+                    "fa_home", "fa_away", "fd_home", "fd_away",
+                    "apps_home", "apps_away",
+                    "injuries_home", "injuries_away",
+                    "rank_diff",
+                    "is_knockout", "stage_weight", "rest_home", "rest_away",
+                    "is_penalty_shootout"
+                ], X_val[i]))
+                
+                query = (
+                    f"Predict the match outcome for a soccer match with these features:\n"
+                    f"Home rank diff {feat_dict['rank_diff']:+.0f}, "
+                    f"Home form (att/def): {feat_dict['fa_home']:.1f}/{feat_dict['fd_home']:.1f}, "
+                    f"Away form (att/def): {feat_dict['fa_away']:.1f}/{feat_dict['fd_away']:.1f}, "
+                    f"Injuries H/A: {feat_dict['injuries_home']}/{feat_dict['injuries_away']}, "
+                    f"Knockout: {bool(feat_dict['is_knockout'])}, Stage weight: {feat_dict['stage_weight']:.1f}, "
+                    f"Rest H/A: {feat_dict['rest_home']:.0f}/{feat_dict['rest_away']:.0f}\n"
+                    f"Similar historical matches:\n{example_text}"
+                )
+                
+                response = client.system_one(
+                    state=query,
+                    questions={
+                        "outcome": Choice(
+                            instructions="Predict the match outcome based on the features and similar historical matches",
+                            criteria={
+                                "Draw": "Match ends in a draw after regulation time",
+                                "Home win": "Home team wins in regulation time",
+                                "Away win": "Away team wins in regulation time",
+                                "Penalty shootout win": "Match goes to penalty shootout and one team wins",
+                            },
+                        ),
+                    },
+                )
+                
+                choice = response.answers["outcome"].choice
+                outcome_map_rev = {"Draw": 0, "Home win": 1, "Away win": 2, "Penalty shootout win": 3}
+                pred_typesafe.append(outcome_map_rev.get(choice, 0))
+            
+            pred_typesafe = np.array(pred_typesafe)
+            acc_typesafe = accuracy_score(y_val, pred_typesafe)
+            print(f"TypeSafe validation accuracy: {acc_typesafe:.2%}")
+            if np.any(val_eval_mask):
+                acc_typesafe_filtered = accuracy_score(y_val[val_eval_mask], pred_typesafe[val_eval_mask])
+                print(f"  Warm-up-excluded validation accuracy: {acc_typesafe_filtered:.2%}")
+        except Exception as e:
+            print(f"TypeSafe classifier failed: {e}")
+    else:
+        print("TypeSafe SDK not installed – skipping TypeSafe comparison.")
 
     # -------------------- XGBoost shallow model with early stopping --------------------
     if XGB_AVAILABLE:

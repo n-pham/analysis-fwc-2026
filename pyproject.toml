@@ -10,5 +10,6 @@ dependencies = [
     "scikit-learn>=1.9.0",
     "tabfm[pytorch]>=1.0.0",
     "tabicl>=2.1.1",
+    "typesafe-sdk>=0.7.0",
     "xgboost>=3.2.0",
 ]
