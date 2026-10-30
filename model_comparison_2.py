@@ -54,6 +54,13 @@ except Exception:
     TABICL_AVAILABLE = False
 
 try:
+    from sdm.models import KumoTabular
+    import torch
+    KUMO_AVAILABLE = True
+except Exception:
+    KUMO_AVAILABLE = False
+
+try:
     from typesafe_sdk import Choice, TypeSafeClient
     TYPESAFE_AVAILABLE = True
 except Exception:
@@ -433,6 +440,72 @@ def main():
         if np.any(val_eval_mask):
             acc_icl_filtered = accuracy_score(y_val[val_eval_mask], pred_icl[val_eval_mask])
             print(f"  Warm-up-excluded validation accuracy: {acc_icl_filtered:.2%}")
+
+    # -------------------- Kumo-Tabular (small) classifier --------------------
+    if KUMO_AVAILABLE:
+        try:
+            import pandas as pd
+            import torch
+            import sdm
+            from sdm.models import KumoTabular
+            
+            # Set seed for reproducibility (model uses random codebooks for ECOC)
+            torch.manual_seed(42)
+            
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            
+            # Prepare feature names
+            feature_names = [
+                "ba_home", "ba_away", "bd_home", "bd_away",
+                "fa_home", "fa_away", "fd_home", "fd_away",
+                "apps_home", "apps_away",
+                "injuries_home", "injuries_away",
+                "rank_diff",
+                "is_knockout", "stage_weight", "rest_home", "rest_away",
+                "is_penalty_shootout",
+            ]
+            
+            # Create training DataFrame
+            train_df = pd.DataFrame(X_train, columns=feature_names)
+            train_df["target"] = y_train
+            
+            # Create validation DataFrame
+            val_df = pd.DataFrame(X_val, columns=feature_names)
+            val_df["target"] = y_val
+            
+            # Infer stypes - all features are numerical, target is categorical
+            stypes = sdm.infer_stypes(train_df, overrides={"target": "categorical"})
+            
+            # Convert to TableTensor
+            train_table = sdm.TableTensor.from_pandas(train_df, stypes=stypes, device=device)
+            val_table = sdm.TableTensor.from_pandas(val_df, stypes=stypes, device=device)
+            
+            # Initialize KumoTabular small model for classification
+            model = KumoTabular(task="classification", size="small", device=device)
+            
+            # Fit using in-context learning with num_estimators
+            with torch.amp.autocast(device.type, torch.float16, enabled=device.type == "cuda"):
+                model.fit(
+                    x=train_table.drop_columns("target"),
+                    y=train_table["target"],
+                    num_estimators=8,
+                )
+                pred_table = model.predict(val_table.drop_columns("target"))
+            
+            # Extract predictions - pred_table has numerical columns for each class
+            pred_kumo = pred_table.numerical.argmax(dim=-1).cpu().numpy()
+            
+            acc_kumo = accuracy_score(y_val, pred_kumo)
+            print(f"Kumo-Tabular (small) validation accuracy: {acc_kumo:.2%}")
+            if np.any(val_eval_mask):
+                acc_kumo_filtered = accuracy_score(y_val[val_eval_mask], pred_kumo[val_eval_mask])
+                print(f"  Warm-up-excluded validation accuracy: {acc_kumo_filtered:.2%}")
+            
+            model.clear()
+        except Exception as e:
+            print(f"Kumo-Tabular classifier failed: {e}")
+    else:
+        print("structured-data-models not installed – skipping Kumo-Tabular comparison.")
 
     # -------------------- TypeSafe Classifier --------------------
     if TYPESAFE_AVAILABLE:
